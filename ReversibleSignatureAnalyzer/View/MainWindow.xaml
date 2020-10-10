@@ -10,26 +10,55 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="2*"/>
-            <RowDefinition Height="5*"/>
+            <RowDefinition Height="2*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*"></ColumnDefinition>
-            <ColumnDefinition Width="3*"/>
-            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="4*"/>
         </Grid.ColumnDefinitions>
-        <Button x:Name="Btn_AddSignature" Content="Add Signature" Grid.Row="0" Grid.Column="0" VerticalAlignment="Top" Height="40" Background="#FF6A6464" Panel.ZIndex="-4" FontSize="18" FontWeight="Bold" Foreground="White" HorizontalAlignment="Stretch" Margin="15,30,0,0" Click="Btn_AddSignature_Click"/>
-        <Button x:Name="Btn_AnalyzeSignature" Content="Analyze Signature" Grid.Row="0" Grid.Column="0" VerticalAlignment="Bottom" Height="40" Background="#FF6A6464" Panel.ZIndex="-4" FontSize="18" FontWeight="Bold" Foreground="White" HorizontalAlignment="Stretch" Margin="15,0,0,30" Click="Btn_AnalyzeSignature_Click" />
 
-        <Button x:Name="btn_import_file" Content="Import File" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Center" Margin="15,30,0,0" VerticalAlignment="Top" Height="51" Width="150" FontWeight="Bold" FontSize="18" Background="#FF959595" Foreground="White" Click="btn_import_file_Click"/>
-        <TextBox x:Name="tv_import_file_path" Grid.Column="1" HorizontalAlignment="Stretch" Margin="30,0,30,30" Text="import file path" TextWrapping="Wrap" VerticalAlignment="Bottom" Height="25" IsEnabled="False"/>
-        <Button x:Name="btn_export_file" Content="Export File" Grid.Column="2" Grid.Row="0" HorizontalAlignment="Center" Margin="15,30,0,0" VerticalAlignment="Top" Height="51" Width="150" FontWeight="Bold" FontSize="18" Background="#FF959595" Foreground="White"/>
-        <TextBox x:Name="tv_export_file_path" Grid.Column="2" HorizontalAlignment="Stretch" Margin="30,0,30,30" Text="export file path" TextWrapping="Wrap" VerticalAlignment="Bottom" Height="25"/>
+        <ComboBox Height="45" Margin="15,50,15,0" VerticalAlignment="Top" FontSize="24" FontWeight="Bold">
+            <ComboBoxItem>
+                <TextBlock>Add Watermark</TextBlock>
+            </ComboBoxItem>
+            <ComboBoxItem>
+                <TextBlock>Analyze Image</TextBlock>
+            </ComboBoxItem>
+        </ComboBox>
 
-        <Image Grid.Column="1" HorizontalAlignment="Stretch" Height="450" Margin="0,0,0,0" Grid.Row="1" Width="500" VerticalAlignment="Stretch" OpacityMask="#FF997272"/>
-        <Image Grid.Column="2" HorizontalAlignment="Stretch" Margin="0,0,0,0" Grid.Row="1" Width="500" Height="450"/>
+        <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="0,15,0,0">
+            <Button x:Name="btn_import_file" Content="Import" HorizontalAlignment="Left" Margin="15,0,0,0" VerticalAlignment="Bottom" FontWeight="Bold" FontSize="18" Background="#FF959595" Foreground="White" Click="btn_import_file_Click" Height="40" Width="90"/>
+            <TextBox x:Name="tv_import_file_path" Margin="5,0,12,0" Text="import file path" TextWrapping="Wrap" VerticalAlignment="Stretch" IsEnabled="False" Width="300"/>
+        </StackPanel>
 
-        <Grid/>
-        <RadioButton Content="RadioButton" HorizontalAlignment="Left" Margin="30,23,0,0" Grid.Row="1" VerticalAlignment="Top"/>
+        <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Margin="0,0,0,30">
+            <Button x:Name="btn_export_file" Content="Export" HorizontalAlignment="Center" Margin="15,0,0,0" VerticalAlignment="Stretch" FontWeight="Bold" FontSize="18" Background="#FF959595" Foreground="White" Height="40" Width="90"/>
+            <TextBox x:Name="tv_export_file_path" HorizontalAlignment="Stretch" Margin="5,0,30,0" Text="export file path" TextWrapping="Wrap" VerticalAlignment="Stretch" Width="300"/>
+        </StackPanel>
+
+        <Image Grid.Column="1" HorizontalAlignment="Stretch" Margin="15,15,15,15" Grid.Row="0" VerticalAlignment="Stretch"/>
+        <Image Grid.Column="1" HorizontalAlignment="Stretch" Margin="15,15,15,15" Grid.Row="1"/>
+
+        <GroupBox Header="Algorythm" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Foreground="White" Margin="15,0,0,15" >
+            <StackPanel>
+                <RadioButton GroupName ="algorithm_type" x:Name="rb_algorythm1" Content="Difference expansion" HorizontalAlignment="Left" Margin="15,15,0,0" Grid.Row="1" VerticalAlignment="Top" Foreground="White" FontSize="16" Grid.ColumnSpan="2" Height="25"/>
+                <RadioButton GroupName ="algorithm_type" x:Name="rb_algorythm2" Content="Alg2" HorizontalAlignment="Left" Margin="15,15,0,0" Grid.Row="1" VerticalAlignment="Top" Foreground="White" FontSize="16" Grid.ColumnSpan="2" Height="25"/>
+                <RadioButton GroupName ="algorithm_type" x:Name="rb_algorythm3" Content="Alg3" HorizontalAlignment="Left" Margin="15,15,0,0" Grid.Row="1" VerticalAlignment="Top" Foreground="White" FontSize="16" Grid.ColumnSpan="2" Height="25"/>
+                <RadioButton GroupName ="algorithm_type" x:Name="rb_algorythm4" Content="Alg4" HorizontalAlignment="Left" Margin="15,15,0,15" Grid.Row="1" VerticalAlignment="Top" Foreground="White" FontSize="16" Grid.ColumnSpan="2" Height="25"/>
+            </StackPanel>
+        </GroupBox>
+
+
+
+        <Button x:Name="Btn_Run" Content="RUN" Grid.Row="1" Grid.Column="0" VerticalAlignment="Top" Height="40" Background="#FF6A6464" Panel.ZIndex="-4" FontSize="18" FontWeight="Bold" Foreground="White" Margin="15,80,15,0" Click="Btn_AnalyzeSignature_Click" />
+        <RichTextBox Height="128" Margin="15,125,15,80" Grid.Row="1" VerticalAlignment="Top">
+            <FlowDocument>
+                <Paragraph>
+                    <Run Text="RichTextBox"/>
+                </Paragraph>
+            </FlowDocument>
+        </RichTextBox>
+        <DatePicker HorizontalAlignment="Left" Margin="-190,508,0,0" Grid.Row="1" VerticalAlignment="Top"/>
 
     </Grid>
 </Window>
