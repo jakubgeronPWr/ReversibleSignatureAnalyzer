@@ -23,6 +23,31 @@ namespace ReversibleSignatureAnalyzer.View
         public MainWindow()
         {
             InitializeComponent();
+            HideStartUp();
+        }
+
+        private void HideStartUp()
+        {
+            //btn_import_file.Visibility = Visibility.Collapsed;
+            //tv_import_file_path.Visibility = Visibility.Collapsed;
+
+            btn_export_file.Visibility = Visibility.Collapsed;
+            tv_export_file_path.Visibility = Visibility.Collapsed;
+        }
+
+        private void btn_import_file_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void Btn_AddSignature_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void Btn_AnalyzeSignature_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }
