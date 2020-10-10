@@ -1,0 +1,33 @@
+﻿<Window x:Class="ReversibleSignatureAnalyzer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ReversibleSignatureAnalyzer"
+        mc:Ignorable="d"
+        Title="ReversibleSignatureAnalyzer
+        " Height="720" Width="1280" Background="Black" Margin="0,0,0,0" VerticalContentAlignment="Center" Padding="15,13,15,15" HorizontalContentAlignment="Center" Grid.IsSharedSizeScope="True">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="5*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"></ColumnDefinition>
+            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition Width="3*"/>
+        </Grid.ColumnDefinitions>
+        <Button x:Name="AddSignature_Btn" Content="Add Signature" Grid.Row="0" Grid.Column="0" VerticalAlignment="Top" Height="50" Width="200" Background="#FF6A6464" Panel.ZIndex="-4" FontSize="18" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" Margin="0,30,0,0"/>
+        <Button x:Name="AnalyzeSignature_Btn" Content="Analyze Signature" Grid.Row="0" Grid.Column="0" VerticalAlignment="Bottom" Height="50" Width="200" Background="#FF6A6464" Panel.ZIndex="-4" FontSize="18" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" Margin="0,0,0,30" />
+        <Image Grid.Column="1" HorizontalAlignment="Stretch" Height="450" Margin="0,0,0,0" Grid.Row="1" Width="500" VerticalAlignment="Stretch"/>
+        <Image Grid.Column="2" HorizontalAlignment="Stretch" Margin="0,0,0,0" Grid.Row="1" Width="500" Height="450"/>
+        <Button Content="Import File" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Center" Margin="15,30,0,0" VerticalAlignment="Top" Height="51" Width="150" FontWeight="Bold" FontSize="18" Background="#FF959595" Foreground="White"/>
+        <TextBox x:Name="tv_import_file_path" Grid.Column="1" HorizontalAlignment="Stretch" Margin="30,0,30,30" Text="import file path" TextWrapping="Wrap" VerticalAlignment="Bottom" Height="25"/>
+        <Button Content="Export File" Grid.Column="2" Grid.Row="0" HorizontalAlignment="Center" Margin="15,30,0,0" VerticalAlignment="Top" Height="51" Width="150" FontWeight="Bold" FontSize="18" Background="#FF959595" Foreground="White"/>
+        <TextBox x:Name="tv_export_file_path" Grid.Column="2" HorizontalAlignment="Stretch" Margin="30,0,30,30" Text="export file path" TextWrapping="Wrap" VerticalAlignment="Bottom" Height="25"/>
+
+
+        <Grid/>
+
+    </Grid>
+</Window>
