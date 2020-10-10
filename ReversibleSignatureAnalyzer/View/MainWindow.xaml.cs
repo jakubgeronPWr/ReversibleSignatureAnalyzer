@@ -20,10 +20,14 @@ namespace ReversibleSignatureAnalyzer.View
     /// </summary>
     public partial class MainWindow : Window
     {
+
+        private bool isFileLoaded = false;
+
         public MainWindow()
         {
             InitializeComponent();
             HideStartUp();
+            SetStartup();
         }
 
         private void HideStartUp()
@@ -31,23 +35,43 @@ namespace ReversibleSignatureAnalyzer.View
             //btn_import_file.Visibility = Visibility.Collapsed;
             //tv_import_file_path.Visibility = Visibility.Collapsed;
 
-            btn_export_file.Visibility = Visibility.Collapsed;
+            BtnExportFile.Visibility = Visibility.Collapsed;
             tv_export_file_path.Visibility = Visibility.Collapsed;
         }
 
-        private void btn_import_file_Click(object sender, RoutedEventArgs e)
+        private void SetStartup()
         {
+            RbAlgorithm1.IsChecked = true;
+            CbActivityType.SelectedIndex = 0;
+        }
+
+        private void BtnImportFile_Click(object sender, RoutedEventArgs e)
+        {
+            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+            dlg.DefaultExt = ".png";
+            dlg.Filter =
+                "PNG Filses (*.png)|*.png|JPG Files (*.jpg)|*.jpg|GIF Files (*.gif)|*.gif|JPEG Files (*.jpeg)|*.jpeg";
+            Nullable<bool> result = dlg.ShowDialog();
+
+            if (result.HasValue && result.Value)
+            {
+                isFileLoaded = true;
+                string fileName = dlg.FileName;
+                TvImportFilePath.Text = fileName;
+                BitmapImage importedImage = new BitmapImage(new Uri(fileName));
+                ImgImport.Source = importedImage;
+
+            }
 
         }
 
-        private void Btn_AddSignature_Click(object sender, RoutedEventArgs e)
+        private void BtnRun_Click(object sender, RoutedEventArgs e)
         {
-
-        }
-
-        private void Btn_AnalyzeSignature_Click(object sender, RoutedEventArgs e)
-        {
-
+            if (isFileLoaded)
+            {
+                BtnExportFile.Visibility = Visibility.Visible;
+                tv_export_file_path.Visibility = Visibility.Visible;
+            }
         }
     }
 }
