@@ -1,12 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Drawing;
 
 namespace ReversibleSignatureAnalyzer.Model
 {
-    interface IReversibleWatermarkingAlgorithm
+    public interface IReversibleWatermarkingAlgorithm
     {
         Bitmap Encode(Bitmap inputImage, String payload);
+
+        Tuple<Bitmap, String> Decode(Bitmap encodedImage);
+
     }
 }

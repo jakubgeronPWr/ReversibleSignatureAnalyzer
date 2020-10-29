@@ -1,21 +1,8 @@
-﻿using ReversibleSignatureAnalyzer.Model;
+﻿using ReversibleSignatureAnalyzer.Controller;
+using ReversibleSignatureAnalyzer.Model;
 using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace ReversibleSignatureAnalyzer.View
 {
@@ -25,8 +12,11 @@ namespace ReversibleSignatureAnalyzer.View
     public partial class MainWindow : Window
     {
 
+        private AddSignatureController addSignatureController;
+        private IReversibleWatermarkingAlgorithm selectedAlgorithm;
         private bool isFileLoaded = false;
         private BitmapImage importedImage;
+        private BitmapImage watermarkedImage;
 
         public MainWindow()
         {
@@ -48,6 +38,8 @@ namespace ReversibleSignatureAnalyzer.View
         {
             RbAlgorithm1.IsChecked = true;
             CbActivityType.SelectedIndex = 0;
+            addSignatureController = new AddSignatureController();
+            selectedAlgorithm = new DifferencesExpansionAlgorithm(20, 1, Direction.Horizontal);
         }
 
         private void BtnImportFile_Click(object sender, RoutedEventArgs e)
@@ -65,7 +57,6 @@ namespace ReversibleSignatureAnalyzer.View
                 TvImportFilePath.Text = fileName;
                 importedImage = new BitmapImage(new Uri(fileName));
                 ImgImport.Source = importedImage;
-
             }
 
         }
@@ -74,34 +65,10 @@ namespace ReversibleSignatureAnalyzer.View
         {
             if (isFileLoaded)
             {
-                DifferencesExpansionAlgorithm algo = new DifferencesExpansionAlgorithm(20, 1, Direction.Horizontal);
-                Bitmap embedded = algo.Encode(BitmapImage2Bitmap(importedImage), "123");
-                BitmapImage bitmapImage = new BitmapImage();
-                using (MemoryStream memory = new MemoryStream())
-                {
-                    embedded.Save(memory, ImageFormat.Png);
-                    memory.Position = 0;
-                    bitmapImage.BeginInit();
-                    bitmapImage.StreamSource = memory;
-                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmapImage.EndInit();
-                }
-                ImgExport.Source = bitmapImage;
+                watermarkedImage = addSignatureController.GetWatermarkedImage(importedImage, "Ala ma kota a kot ma ale gsdgos dds gojsdf gdsf gsdfhg dsg sdf gsdhgdg gdh jdj hd jhd jgfg esrgesrg sgh srtg ers gseh sf hsgsdg gdfsg hsg dfg sdfg sdf gdsf ghsgh esghsh sgh sdgh sdfh ersg erghrshdrth rthertge a gesr ge aa rgseg sdgeagt shgs hrthtwae rhrts erthres rhrts taerjrtsya eshrystyerdt yhjtdrsyeatw eyshyjhjytrsyeat dghjdytrsyehjhmkit76ryrhtnhm nbvxghtdyr brthnyytrhgb ghdrt yrhg nyrtshjfyu srm,ytr jmghtdr dfgrd", selectedAlgorithm);
+                ImgExport.Source = watermarkedImage;
                 BtnExportFile.Visibility = Visibility.Visible;
                 tv_export_file_path.Visibility = Visibility.Visible;
-            }
-        }
-
-        private Bitmap BitmapImage2Bitmap(BitmapImage bitmapImage)
-        {
-            using (MemoryStream outStream = new MemoryStream())
-            {
-                BitmapEncoder enc = new BmpBitmapEncoder();
-                enc.Frames.Add(BitmapFrame.Create(bitmapImage));
-                enc.Save(outStream);
-                System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(outStream);
-
-                return new Bitmap(bitmap);
             }
         }
     }
