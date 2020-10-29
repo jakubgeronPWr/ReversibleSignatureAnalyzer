@@ -65,7 +65,6 @@ namespace ReversibleSignatureAnalyzer.View
                 TvImportFilePath.Text = fileName;
                 importedImage = new BitmapImage(new Uri(fileName));
                 ImgImport.Source = importedImage;
-
             }
 
         }
@@ -74,34 +73,8 @@ namespace ReversibleSignatureAnalyzer.View
         {
             if (isFileLoaded)
             {
-                DifferencesExpansionAlgorithm algo = new DifferencesExpansionAlgorithm(20, 1, Direction.Horizontal);
-                Bitmap embedded = algo.Encode(BitmapImage2Bitmap(importedImage), "123");
-                BitmapImage bitmapImage = new BitmapImage();
-                using (MemoryStream memory = new MemoryStream())
-                {
-                    embedded.Save(memory, ImageFormat.Png);
-                    memory.Position = 0;
-                    bitmapImage.BeginInit();
-                    bitmapImage.StreamSource = memory;
-                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmapImage.EndInit();
-                }
-                ImgExport.Source = bitmapImage;
                 BtnExportFile.Visibility = Visibility.Visible;
                 tv_export_file_path.Visibility = Visibility.Visible;
-            }
-        }
-
-        private Bitmap BitmapImage2Bitmap(BitmapImage bitmapImage)
-        {
-            using (MemoryStream outStream = new MemoryStream())
-            {
-                BitmapEncoder enc = new BmpBitmapEncoder();
-                enc.Frames.Add(BitmapFrame.Create(bitmapImage));
-                enc.Save(outStream);
-                System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(outStream);
-
-                return new Bitmap(bitmap);
             }
         }
     }

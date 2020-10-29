@@ -77,9 +77,8 @@ namespace ReversibleSignatureAnalyzer.Model
             byte[] compressedLSBs = RLE<byte>.Encode(LSBs).ToArray();
 
             int embeddingCapacity = EZSize + EN1Size + EN2AndCN.Count;
-            byte[] pay = new byte[] { 1, 2, 3, 4, 5, 6 };
 
-            byte[] embeddingStream = ConcatArrays(compressedLocalityVector, new byte[] { EOM }, compressedLSBs, pay);
+            byte[] embeddingStream = ConcatArrays(compressedLocalityVector, new byte[] { EOM }, compressedLSBs, Encoding.ASCII.GetBytes(payload));
             bool[] bits = embeddingStream.SelectMany(GetBits).ToArray();
 
             int bitNumber = 0;

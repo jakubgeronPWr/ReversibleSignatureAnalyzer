@@ -5,7 +5,7 @@ using System.Drawing;
 
 namespace ReversibleSignatureAnalyzer.Model
 {
-    interface IReversibleWatermarkingAlgorithm
+    public interface IReversibleWatermarkingAlgorithm
     {
         Bitmap Encode(Bitmap inputImage, String payload);
     }
