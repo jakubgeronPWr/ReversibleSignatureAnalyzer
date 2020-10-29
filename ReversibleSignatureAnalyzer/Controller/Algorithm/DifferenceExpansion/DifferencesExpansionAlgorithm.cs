@@ -276,7 +276,7 @@ namespace ReversibleSignatureAnalyzer.Model
 
         public Tuple<Bitmap, String> Decode(Bitmap encodedImage)
         {
-            return null;
+            throw new NotImplementedException();
         }
 
     }

@@ -97,6 +97,10 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
             return newImage;
         }
 
+        public Tuple<Bitmap, string> Decode(Bitmap encodedImage)
+        {
+            throw new NotImplementedException();
+        }
     }
 
 }
