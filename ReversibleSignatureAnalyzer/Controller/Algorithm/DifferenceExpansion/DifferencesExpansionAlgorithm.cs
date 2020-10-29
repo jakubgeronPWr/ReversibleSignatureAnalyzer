@@ -83,9 +83,9 @@ namespace ReversibleSignatureAnalyzer.Model
             bool[] bits = embeddingStream.SelectMany(GetBits).ToArray();
 
             int bitNumber = 0;
-            for(int p = 0; p < setsIds.GetLength(0); p++)
+            for(int p = 0; p < setsIds.GetLength(0) && bitNumber < bits.Length; p++)
             {
-                for(int q = 0; q < setsIds.GetLength(1); q++)
+                for(int q = 0; q < setsIds.GetLength(1) && bitNumber < bits.Length; q++)
                 {
                     if (setsIds[p, q] == SetName.EZ || setsIds[p, q] == SetName.EN1)
                     {
@@ -158,13 +158,13 @@ namespace ReversibleSignatureAnalyzer.Model
 
         private bool IsExpandable(int i, int j, int[,] differences, int[,] averages)
         {
-            return Math.Abs(2 * differences[i, j] + 0) <= Math.Min(2 * (255 - averages[i, j]), 2 * averages[i, j] + 1) || 
+            return Math.Abs(2 * differences[i, j] + 0) <= Math.Min(2 * (255 - averages[i, j]), 2 * averages[i, j] + 1) && 
                 Math.Abs(2 * differences[i, j] + 1) <= Math.Min(2 * (255 - averages[i, j]), 2 * averages[i, j] + 1);
         }
 
         private bool IsChangeable(int i, int j, int[,] differences, int[,] averages)
         {
-            return Math.Abs(2 * (differences[i, j] / 2) + 0) <= Math.Min(2 * (255 - averages[i, j]), 2 * averages[i, j] + 1) ||
+            return Math.Abs(2 * (differences[i, j] / 2) + 0) <= Math.Min(2 * (255 - averages[i, j]), 2 * averages[i, j] + 1) &&
                 Math.Abs(2 * (differences[i, j] / 2) + 1) <= Math.Min(2 * (255 - averages[i, j]), 2 * averages[i, j] + 1);
         }
 
@@ -184,18 +184,18 @@ namespace ReversibleSignatureAnalyzer.Model
             int i = 0;
             for(; i < count; i++)
             {
-                leastSignificantBits[i] = (byte)((values[i] & 1) + (values[i + 1] & 1) * 2 + (values[i + 2] & 1) * 4 + (values[i + 3] & 1) * 8);
+                leastSignificantBits.Add((byte)((values[i] & 1) + (values[i + 1] & 1) * 2 + (values[i + 2] & 1) * 4 + (values[i + 3] & 1) * 8));
             }
             switch(reminder)
             {
                 case 1:
-                    leastSignificantBits[i] = (byte)(values[i] & 1);
+                    leastSignificantBits.Add((byte)(values[i] & 1));
                     break;
                 case 2:
-                    leastSignificantBits[i] = (byte)((values[i] & 1) + (values[i + 1] & 1));
+                    leastSignificantBits.Add((byte)((values[i] & 1) + (values[i + 1] & 1)));
                     break;
                 case 3:
-                    leastSignificantBits[i] = (byte)((values[i] & 1) + (values[i + 1] & 1) * 2 + (values[i + 2] & 1) * 4);
+                    leastSignificantBits.Add((byte)((values[i] & 1) + (values[i + 1] & 1) * 2 + (values[i + 2] & 1) * 4));
                     break;
             }
             return leastSignificantBits;

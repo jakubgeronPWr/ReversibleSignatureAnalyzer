@@ -1,5 +1,9 @@
-﻿using System;
+﻿using ReversibleSignatureAnalyzer.Model;
+using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,6 +26,7 @@ namespace ReversibleSignatureAnalyzer.View
     {
 
         private bool isFileLoaded = false;
+        private BitmapImage importedImage;
 
         public MainWindow()
         {
@@ -58,7 +63,7 @@ namespace ReversibleSignatureAnalyzer.View
                 isFileLoaded = true;
                 string fileName = dlg.FileName;
                 TvImportFilePath.Text = fileName;
-                BitmapImage importedImage = new BitmapImage(new Uri(fileName));
+                importedImage = new BitmapImage(new Uri(fileName));
                 ImgImport.Source = importedImage;
 
             }
@@ -69,8 +74,34 @@ namespace ReversibleSignatureAnalyzer.View
         {
             if (isFileLoaded)
             {
+                DifferencesExpansionAlgorithm algo = new DifferencesExpansionAlgorithm(20, 1, Direction.Horizontal);
+                Bitmap embedded = algo.Encode(BitmapImage2Bitmap(importedImage), "123");
+                BitmapImage bitmapImage = new BitmapImage();
+                using (MemoryStream memory = new MemoryStream())
+                {
+                    embedded.Save(memory, ImageFormat.Png);
+                    memory.Position = 0;
+                    bitmapImage.BeginInit();
+                    bitmapImage.StreamSource = memory;
+                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmapImage.EndInit();
+                }
+                ImgExport.Source = bitmapImage;
                 BtnExportFile.Visibility = Visibility.Visible;
                 tv_export_file_path.Visibility = Visibility.Visible;
+            }
+        }
+
+        private Bitmap BitmapImage2Bitmap(BitmapImage bitmapImage)
+        {
+            using (MemoryStream outStream = new MemoryStream())
+            {
+                BitmapEncoder enc = new BmpBitmapEncoder();
+                enc.Frames.Add(BitmapFrame.Create(bitmapImage));
+                enc.Save(outStream);
+                System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(outStream);
+
+                return new Bitmap(bitmap);
             }
         }
     }
