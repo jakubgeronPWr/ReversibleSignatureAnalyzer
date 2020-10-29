@@ -12,9 +12,9 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
         public int[] getHistogram(Bitmap inputImage)
         {
             int[] histogram = new int[256];
-            for (int x = 0; x < inputImage.Height; x++)
+            for (int x = 0; x < inputImage.Width; x++)
             {
-                for (int y = 0; y < inputImage.Width; y++)
+                for (int y = 0; y < inputImage.Height; y++)
                 {
                     histogram[inputImage.GetPixel(x, y).R] += 1; // Temporary pixel channel reading
                 }
