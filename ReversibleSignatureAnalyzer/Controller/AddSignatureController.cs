@@ -1,12 +1,8 @@
 ﻿using ReversibleSignatureAnalyzer.Model;
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 
 namespace ReversibleSignatureAnalyzer.Controller
@@ -27,7 +23,7 @@ namespace ReversibleSignatureAnalyzer.Controller
                 BitmapEncoder enc = new BmpBitmapEncoder();
                 enc.Frames.Add(BitmapFrame.Create(bitmapImage));
                 enc.Save(outStream);
-                System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(outStream);
+                Bitmap bitmap = new System.Drawing.Bitmap(outStream);
                 return new Bitmap(bitmap);
             }
         }
