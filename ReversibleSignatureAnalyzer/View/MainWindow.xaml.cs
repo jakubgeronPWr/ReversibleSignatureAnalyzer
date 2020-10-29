@@ -1,4 +1,5 @@
-﻿using ReversibleSignatureAnalyzer.Model;
+﻿using ReversibleSignatureAnalyzer.Controller;
+using ReversibleSignatureAnalyzer.Model;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -25,8 +26,11 @@ namespace ReversibleSignatureAnalyzer.View
     public partial class MainWindow : Window
     {
 
+        private AddSignatureController addSignatureController;
+        private IReversibleWatermarkingAlgorithm selectedAlgorithm;
         private bool isFileLoaded = false;
         private BitmapImage importedImage;
+        private BitmapImage watermarkedImage;
 
         public MainWindow()
         {
@@ -48,6 +52,8 @@ namespace ReversibleSignatureAnalyzer.View
         {
             RbAlgorithm1.IsChecked = true;
             CbActivityType.SelectedIndex = 0;
+            addSignatureController = new AddSignatureController();
+            selectedAlgorithm = new DifferencesExpansionAlgorithm(20, 1, Direction.Horizontal);
         }
 
         private void BtnImportFile_Click(object sender, RoutedEventArgs e)
@@ -73,6 +79,8 @@ namespace ReversibleSignatureAnalyzer.View
         {
             if (isFileLoaded)
             {
+                watermarkedImage = addSignatureController.GetWatermarkedImage(importedImage, "Ala ma kota", selectedAlgorithm);
+                ImgExport.Source = watermarkedImage;
                 BtnExportFile.Visibility = Visibility.Visible;
                 tv_export_file_path.Visibility = Visibility.Visible;
             }
