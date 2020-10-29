@@ -274,6 +274,11 @@ namespace ReversibleSignatureAnalyzer.Model
             return image;
         }
 
+        public Tuple<Bitmap, String> Decode(Bitmap encodedImage)
+        {
+            return null;
+        }
+
     }
 
     enum Direction
