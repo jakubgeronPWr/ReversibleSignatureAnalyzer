@@ -22,17 +22,34 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
             return histogram;
         }
 
+        public (int, int) findSignificantPoints(int [] histogram)
+        {
+            int a = Array.IndexOf(histogram, histogram.Max());
+            int b = 0;
+            int minVal = int.MaxValue;
+            for (int x = 255; x > a; x--)
+            {
+                if (histogram[x] < minVal)
+                {
+                    minVal = histogram[x];
+                    b = x;
+                }
+            }
+
+            return (a, b);
+        }
+
         public (int, int)[] recodeMinPixels(Bitmap image, int b)
         {
             // If b is 0 already ignore this step
             if (b == 0) return null;
             // else
             List<(int, int)> positions = new List<(int, int)>();
-            for (int x = 0; x < image.Height; x++)
+            for (int x = 0; x < image.Width; x++)
             {
-                for (int y = 0; y < image.Width; y++)
+                for (int y = 0; y < image.Height; y++)
                 {
-                    if (image.GetPixel(x, y).R == b) 
+                    if (image.GetPixel(x, y).R == b)
                     {
                         Color curPix = image.GetPixel(x, y);
                         positions.Add((x, y));
@@ -43,28 +60,25 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
             return positions.ToArray();
         }
 
-        public Bitmap shiftImageAndEncode(Bitmap image, int a, int b, BitArray bitPayload)
+        public Bitmap shiftImageAndEncode(Bitmap image, int a, int b, System.Collections.BitArray bitPayload)
         {
             int payloadPos = 0;
-            for (int x = 0; x < image.Height; x++)
+            for (int x = 0; x < image.Width; x++)
             {
-                for (int y = 0; y < image.Width; y++)
+                for (int y = 0; y < image.Height; y++)
                 {
-                    if (image.GetPixel(x, y).R == b)
+                    Color curPix = image.GetPixel(x, y);
+                    if ((curPix.R > a) && (curPix.R < b))
                     {
-                        Color curPix = image.GetPixel(x, y);
-                        if ((curPix.R > a) && (curPix.R < b))
+                        image.SetPixel(x, y, Color.FromArgb(curPix.A, curPix.R + 1, curPix.G, curPix.B)); // Temporary, shift value of pixel by 1
+                    }
+                    else if (curPix.R == a)
+                    {
+                        if (bitPayload.Length > payloadPos && bitPayload.Get(payloadPos))
                         {
-                            image.SetPixel(x, y, Color.FromArgb(curPix.A, curPix.R+1, curPix.G, curPix.B)); // Temporary, shift value of pixel by 1
+                            image.SetPixel(x, y, Color.FromArgb(curPix.A, curPix.R + 1, curPix.G, curPix.B)); // Temporary, shift value of pixel by 1
                         }
-                        else if (curPix.R == a)
-                        {
-                            if (bitPayload.Get(payloadPos))
-                            {
-                                image.SetPixel(x, y, Color.FromArgb(curPix.A, curPix.R+1, curPix.G, curPix.B));
-                            }
-                            payloadPos++;
-                        }
+                        payloadPos++;
                     }
                 }
             }
@@ -77,15 +91,16 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
             BitArray bitPayload = new BitArray(Encoding.ASCII.GetBytes(payload));
             int[] histogram = getHistogram(newImage);
             // Find Max 'a' and Min 'b'
-            int a = Array.IndexOf(histogram, histogram.Max());
-            int b = Array.IndexOf(histogram, histogram.Min());
-            // If b < a the encoding is not possible
-            if (b < a) 
-            { 
+            int a = 0;
+            int b = 0;
+            (a, b) = findSignificantPoints(histogram);
+            // If a < b the encoding is not possible
+            if (b < a)
+            {
                 return inputImage; // Temporary
-            }    
+            }
             // If b - a > payload message, encoding is not possible
-            if (b - a < bitPayload.Length)
+            if (histogram[a] - histogram[b] < bitPayload.Length)
             {
                 return inputImage; // Temporary
             }
@@ -96,7 +111,5 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
             // REMEMBER, save overhead for decoding
             return newImage;
         }
-
-    }
-
+	}
 }
