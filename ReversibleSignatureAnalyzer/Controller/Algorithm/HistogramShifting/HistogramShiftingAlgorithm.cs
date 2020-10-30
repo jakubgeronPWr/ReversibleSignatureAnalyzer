@@ -9,7 +9,7 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
 {
     class HistogramShiftingAlgorithm : IReversibleWatermarkingAlgorithm
     {
-        public int[] getHistogram(Bitmap inputImage)
+        private int[] getHistogram(Bitmap inputImage)
         {
             int[] histogram = new int[256];
             for (int x = 0; x < inputImage.Width; x++)
@@ -22,7 +22,7 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
             return histogram;
         }
 
-        public (int, int) findSignificantPoints(int [] histogram)
+        private (int, int) findSignificantPoints(int [] histogram)
         {
             int a = Array.IndexOf(histogram, histogram.Max());
             int b = 0;
@@ -39,7 +39,7 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
             return (a, b);
         }
 
-        public (int, int)[] recodeMinPixels(Bitmap image, int b)
+        private (int, int)[] recodeMinPixels(Bitmap image, int b)
         {
             // If b is 0 already ignore this step
             if (b == 0) return null;
@@ -60,7 +60,7 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
             return positions.ToArray();
         }
 
-        public Bitmap shiftImageAndEncode(Bitmap image, int a, int b, System.Collections.BitArray bitPayload)
+        private Bitmap shiftImageAndEncode(Bitmap image, int a, int b, System.Collections.BitArray bitPayload)
         {
             int payloadPos = 0;
             for (int x = 0; x < image.Width; x++)
