@@ -35,8 +35,8 @@
         <GroupBox Header="Algorythm" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Foreground="White" Margin="15,0,0,15" >
             <StackPanel>
                 <RadioButton GroupName ="algorithm_type" x:Name="RbAlgorithm1" Content="Difference expansion" HorizontalAlignment="Left" Margin="15,15,0,0" Grid.Row="1" VerticalAlignment="Top" Foreground="White" FontSize="16" Grid.ColumnSpan="2" Height="25"/>
-                <RadioButton GroupName ="algorithm_type" x:Name="RbAlgorithm2" Content="Alg2" HorizontalAlignment="Left" Margin="15,15,0,0" Grid.Row="1" VerticalAlignment="Top" Foreground="White" FontSize="16" Grid.ColumnSpan="2" Height="25"/>
-                <RadioButton GroupName ="algorithm_type" x:Name="RbAlgorithm3" Content="Alg3" HorizontalAlignment="Left" Margin="15,15,0,0" Grid.Row="1" VerticalAlignment="Top" Foreground="White" FontSize="16" Grid.ColumnSpan="2" Height="25"/>
+                <RadioButton GroupName ="algorithm_type" x:Name="RbAlgorithm2" Content="DwtDctSvd" HorizontalAlignment="Left" Margin="15,15,0,0" Grid.Row="1" VerticalAlignment="Top" Foreground="White" FontSize="16" Grid.ColumnSpan="2" Height="25"/>
+                <RadioButton GroupName ="algorithm_type" x:Name="RbAlgorithm3" Content="Histogram Shifting" HorizontalAlignment="Left" Margin="15,15,0,0" Grid.Row="1" VerticalAlignment="Top" Foreground="White" FontSize="16" Grid.ColumnSpan="2" Height="25"/>
                 <RadioButton GroupName ="algorithm_type" x:Name="RbAlgorithm4" Content="Alg4" HorizontalAlignment="Left" Margin="15,15,0,15" Grid.Row="1" VerticalAlignment="Top" Foreground="White" FontSize="16" Grid.ColumnSpan="2" Height="25"/>
             </StackPanel>
         </GroupBox>
@@ -47,7 +47,7 @@
         <RichTextBox Height="128" Margin="15,125,15,80" Grid.Row="1" VerticalAlignment="Top">
             <FlowDocument>
                 <Paragraph>
-                    <Run Text="RichTextBox"/>
+                    <Run Text="Your message to hide..."/>
                 </Paragraph>
             </FlowDocument>
         </RichTextBox>

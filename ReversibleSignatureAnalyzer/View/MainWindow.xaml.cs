@@ -1,8 +1,11 @@
 ﻿using ReversibleSignatureAnalyzer.Controller;
 using ReversibleSignatureAnalyzer.Model;
 using System;
+using System.IO;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Media.Imaging;
+using Microsoft.VisualBasic.CompilerServices;
 
 namespace ReversibleSignatureAnalyzer.View
 {
@@ -11,7 +14,8 @@ namespace ReversibleSignatureAnalyzer.View
     /// </summary>
     public partial class MainWindow : Window
     {
-
+        string path = (new System.Uri(Assembly.GetExecutingAssembly().CodeBase)).AbsolutePath;
+        string projectDirectory = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName;
         private AddSignatureController addSignatureController;
         private IReversibleWatermarkingAlgorithm selectedAlgorithm;
         private bool isFileLoaded = false;
@@ -40,6 +44,7 @@ namespace ReversibleSignatureAnalyzer.View
             CbActivityType.SelectedIndex = 0;
             addSignatureController = new AddSignatureController();
             selectedAlgorithm = new DifferencesExpansionAlgorithm(20, 1, Direction.Horizontal);
+            ImportImage(projectDirectory + "/Model/_img/lena.png");
         }
 
         private void BtnImportFile_Click(object sender, RoutedEventArgs e)
@@ -54,11 +59,16 @@ namespace ReversibleSignatureAnalyzer.View
             {
                 isFileLoaded = true;
                 string fileName = dlg.FileName;
-                TvImportFilePath.Text = fileName;
-                importedImage = new BitmapImage(new Uri(fileName));
-                ImgImport.Source = importedImage;
+                ImportImage(fileName);
             }
 
+        }
+
+        private void ImportImage(string fileName)
+        {
+            TvImportFilePath.Text = fileName;
+            importedImage = new BitmapImage(new Uri(fileName));
+            ImgImport.Source = importedImage;
         }
 
         private void BtnRun_Click(object sender, RoutedEventArgs e)
