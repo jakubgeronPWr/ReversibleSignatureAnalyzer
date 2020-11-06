@@ -21,9 +21,10 @@ namespace ReversibleSignatureAnalyzer.View
         string projectDirectory = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName;
         private AddSignatureController addSignatureController;
         private IReversibleWatermarkingAlgorithm selectedAlgorithm;
-        private bool isFileLoaded = false;
+        private bool isFileLoaded = true;
         private BitmapImage importedImage;
         private BitmapImage watermarkedImage;
+        private String activityType;
 
         public MainWindow()
         {
@@ -48,6 +49,7 @@ namespace ReversibleSignatureAnalyzer.View
             addSignatureController = new AddSignatureController();
             RbAlgorithm1.IsChecked = true;
             ImportImage(projectDirectory + "/Model/_img/lena.png");
+            activityType = CbActivityType.Text;
         }
 
         private void BtnImportFile_Click(object sender, RoutedEventArgs e)
@@ -78,9 +80,19 @@ namespace ReversibleSignatureAnalyzer.View
         {
             var secretPayload = GetTextFromRichTextBox(TvPayload);
             GetSelectedAlgorithm();
-            if (isFileLoaded)
+            if (isFileLoaded && CbActivityType.Text == TbAdd.Content.ToString())
             {
                 watermarkedImage = addSignatureController.GetWatermarkedImage(importedImage, "Ala ma kota a kota ma ale.", selectedAlgorithm);
+                ImgExport.Source = watermarkedImage;
+                Console.WriteLine(watermarkedImage.UriSource);
+                BtnExportFile.Visibility = Visibility.Visible;
+                tv_export_file_path.Visibility = Visibility.Visible;
+            }
+
+            if (isFileLoaded && CbActivityType.Text == TbAnalyze.Content.ToString())
+            {
+                watermarkedImage = addSignatureController.GetDecodedImage(importedImage, selectedAlgorithm).Item1;
+                SetTextRichTextBox(TvPayload ,addSignatureController.GetDecodedImage(importedImage, selectedAlgorithm).Item2);
                 ImgExport.Source = watermarkedImage;
                 Console.WriteLine(watermarkedImage.UriSource);
                 BtnExportFile.Visibility = Visibility.Visible;
@@ -97,6 +109,12 @@ namespace ReversibleSignatureAnalyzer.View
             return tr.Text;
         }
 
+        private void SetTextRichTextBox(RichTextBox rtb, string text)
+        {
+            rtb.Document.Blocks.Clear();
+            rtb.Document.Blocks.Add(new Paragraph(new Run(text)));
+        }
+
         private void GetSelectedAlgorithm()
         {
             if (RbAlgorithm1.IsChecked.Value)
@@ -111,8 +129,6 @@ namespace ReversibleSignatureAnalyzer.View
             {
                 selectedAlgorithm = new HistogramShiftingAlgorithm();
             }
-            
-
         }
 
     }
