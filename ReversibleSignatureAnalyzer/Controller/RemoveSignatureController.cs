@@ -8,6 +8,6 @@ namespace ReversibleSignatureAnalyzer.Controller
 {
     public class RemoveSignatureController
     {
-        
+  
     }
 }
