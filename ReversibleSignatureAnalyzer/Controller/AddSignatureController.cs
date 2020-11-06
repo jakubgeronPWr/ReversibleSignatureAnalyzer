@@ -9,7 +9,7 @@ namespace ReversibleSignatureAnalyzer.Controller
 {
     public class AddSignatureController
     {
-        public BitmapImage GetWatermarkedImage(BitmapImage bitmapImage, String payload, IReversibleWatermarkingAlgorithm algorithm)
+        public BitmapImage GetWatermarkedImage(BitmapImage bitmapImage, string payload, IReversibleWatermarkingAlgorithm algorithm)
         {
             Bitmap originalBitmap = BitmapImageToBitmap(bitmapImage);
             Bitmap encodedBitmap = algorithm.Encode(originalBitmap, payload);
@@ -42,5 +42,13 @@ namespace ReversibleSignatureAnalyzer.Controller
                 return bitmapImage;
             }
         }
+
+        public Tuple<BitmapImage, string> GetDecodedImage(BitmapImage bitmapImage, IReversibleWatermarkingAlgorithm algorithm)
+        {
+            Bitmap encodedImage = BitmapImageToBitmap(bitmapImage);
+            Tuple<Bitmap, string> decodingResult = algorithm.Decode(encodedImage);
+            return new Tuple<BitmapImage, string>(BitmapToBitmapImage(decodingResult.Item1), decodingResult.Item2);
+        }
+
     }
 }

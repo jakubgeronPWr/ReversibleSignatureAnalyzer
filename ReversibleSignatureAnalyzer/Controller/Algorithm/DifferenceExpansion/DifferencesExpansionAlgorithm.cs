@@ -1,3 +1,4 @@
+
 ﻿using ReversibleSignatureAnalyzer.Model.Algorithm;
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,6 @@ namespace ReversibleSignatureAnalyzer.Model
         private int treshold;
         private int iterations;
         private Direction direction;
-        private const byte EOM = 255;
 
         public DifferencesExpansionAlgorithm(int treshold, int iterations, Direction direction)
         {
@@ -26,7 +26,7 @@ namespace ReversibleSignatureAnalyzer.Model
             int[,] averages = Calculate(image, CalculateAverage, direction);
             int[,] differences = Calculate(image, CalculateDifference, direction);
             int[,] localityMap = GetEmptyArrayAdjustedToImageSize(image, direction);
-            SetName[,] setsIds = new SetName[localityMap.GetLength(0), localityMap.GetLength(1)];
+            EncodingSetName[,] setsIds = new EncodingSetName[localityMap.GetLength(0), localityMap.GetLength(1)];
             int EZSize = 0;
             int EN1Size = 0;
             List<int> EN2AndCN = new List<int>();
@@ -40,45 +40,50 @@ namespace ReversibleSignatureAnalyzer.Model
                         {
                             localityMap[i, j] = 1;
                             EZSize++;
-                            setsIds[i, j] = SetName.EZ;
+                            setsIds[i, j] = EncodingSetName.EZ;
                         }
                         else if (Math.Abs(differences[i, j]) <= treshold)
                         {
                             localityMap[i, j] = 1;
                             EN1Size++;
-                            setsIds[i, j] = SetName.EN1;
+                            setsIds[i, j] = EncodingSetName.EN1;
                         }
                         else
                         {
                             EN2AndCN.Add(differences[i, j]);
                             localityMap[i, j] = 0;
-                            setsIds[i, j] = SetName.EN2;
+                            setsIds[i, j] = EncodingSetName.EN2;
                         }
                     }
                     else if (IsChangeable(i, j, differences, averages))
                     {
                         EN2AndCN.Add(differences[i, j]);
                         localityMap[i, j] = 0;
-                        setsIds[i, j] = SetName.CN;
+                        setsIds[i, j] = EncodingSetName.CN;
                     }
                     else
                     {
                         localityMap[i, j] = 0;
-                        setsIds[i, j] = SetName.NC;
+                        setsIds[i, j] = EncodingSetName.NC;
                     }
                 }
             }
 
             List<byte> localityVector = GetLeastSignificatBits(ConvertToList(localityMap));
-            byte[] compressedLocalityVector = RLE<byte>.Encode(localityVector).ToArray();
+//            byte[] compressedLocalityVector = RLE<byte>.Encode(localityVector).ToArray();
 
             List<int> filteredEN2AndCN = EN2AndCN.Where(x => x != -2 && x != 1).ToList();
             List<byte> LSBs = GetLeastSignificatBits(filteredEN2AndCN);
-            byte[] compressedLSBs = RLE<byte>.Encode(LSBs).ToArray();
+ //           byte[] compressedLSBs = RLE<byte>.Encode(LSBs).ToArray();
 
             int embeddingCapacity = EZSize + EN1Size + EN2AndCN.Count;
 
-            byte[] embeddingStream = ConcatArrays(compressedLocalityVector, new byte[] { EOM }, compressedLSBs, Encoding.ASCII.GetBytes(payload));
+            byte[] localityVectorSize = BitConverter.GetBytes((uint)localityVector.Count);
+            byte[] LSBsSize = BitConverter.GetBytes((uint)LSBs.Count);
+            byte[] header = ConcatArrays(localityVectorSize, LSBsSize);
+            byte[] data = ConcatArrays(localityVector.ToArray(), LSBs.ToArray(), Encoding.ASCII.GetBytes(payload));
+            byte[] compressedData = RLE<byte>.Encode(new List<byte>(data)).ToArray(); 
+            byte[] embeddingStream = ConcatArrays(header, compressedData);
             bool[] bits = embeddingStream.SelectMany(GetBits).ToArray();
 
             int bitNumber = 0;
@@ -86,12 +91,12 @@ namespace ReversibleSignatureAnalyzer.Model
             {
                 for(int q = 0; q < setsIds.GetLength(1) && bitNumber < bits.Length; q++)
                 {
-                    if (setsIds[p, q] == SetName.EZ || setsIds[p, q] == SetName.EN1)
+                    if (setsIds[p, q] == EncodingSetName.EZ || setsIds[p, q] == EncodingSetName.EN1)
                     {
                         differences[p, q] = 2 * differences[p, q] + GetIntValue(bits[bitNumber]);
                         bitNumber++;
                     }
-                    else if (setsIds[p, q] == SetName.EN2 || setsIds[p, q] == SetName.CN)
+                    else if (setsIds[p, q] == EncodingSetName.EN2 || setsIds[p, q] == EncodingSetName.CN)
                     {
                         differences[p, q] = 2 * (differences[p, q] / 2) + GetIntValue(bits[bitNumber]);
                         bitNumber++;
@@ -178,27 +183,22 @@ namespace ReversibleSignatureAnalyzer.Model
         private List<byte> GetLeastSignificatBits(List<int> values)
         {
             List<byte> leastSignificantBits = new List<byte>();
-            int count = values.Count / 4;
-            int reminder = values.Count % 4;
+            int count = values.Count / 8;
+            int reminder = values.Count % 8;
             int i = 0;
+            int currentValue = 0;
             for(; i < count; i++)
             {
-                leastSignificantBits.Add((byte)((values[i] & 1) + (values[i + 1] & 1) * 2 + (values[i + 2] & 1) * 4 + (values[i + 3] & 1) * 8));
-            }
-            switch(reminder)
-            {
-                case 1:
-                    leastSignificantBits.Add((byte)(values[i] & 1));
-                    break;
-                case 2:
-                    leastSignificantBits.Add((byte)((values[i] & 1) + (values[i + 1] & 1)));
-                    break;
-                case 3:
-                    leastSignificantBits.Add((byte)((values[i] & 1) + (values[i + 1] & 1) * 2 + (values[i + 2] & 1) * 4));
-                    break;
+                currentValue = 0;
+                for(int pos = 0; pos < 8 && (i + pos) < values.Count; pos++)
+                {
+                    currentValue += (values[i + pos] & 1) * (int)(Math.Pow(2, 7 - pos));
+                }
+                leastSignificantBits.Add((byte) currentValue);
             }
             return leastSignificantBits;
         }
+
         public static T[] ConcatArrays<T>(params T[][] list)
         {
             var result = new T[list.Sum(a => a.Length)];
@@ -274,9 +274,76 @@ namespace ReversibleSignatureAnalyzer.Model
             return image;
         }
 
-        public Tuple<Bitmap, String> Decode(Bitmap encodedImage)
+        public Tuple<Bitmap, string> Decode(Bitmap encodedImage)
         {
-            throw new NotImplementedException();
+            Bitmap image = new Bitmap(encodedImage);
+            int[,] averages = Calculate(image, CalculateAverage, direction);
+            int[,] differences = Calculate(image, CalculateDifference, direction);
+            int[,] localityMap = GetEmptyArrayAdjustedToImageSize(image, direction);
+            DecodingSetName[,] setsIds = new DecodingSetName[localityMap.GetLength(0), localityMap.GetLength(1)];
+            List<int> changeableDifferences = new List<int>();
+
+            for (int i = 0; i < setsIds.GetLength(0); i++)
+            {
+                for (int j = 0; j < setsIds.GetLength(1); j++)
+                {
+                    if (IsChangeable(i, j, differences, averages))
+                    {
+                        changeableDifferences.Add(differences[i, j]);
+                        setsIds[i, j] = DecodingSetName.CH;
+                    }
+                    else
+                    {
+                        setsIds[i, j] = DecodingSetName.NC;
+                    }
+                }
+            }
+            List<byte> LSBs = GetLeastSignificatBits(changeableDifferences);
+            byte[] localityVectorSizeBytes = LSBs.GetRange(0, 4).ToArray();
+            byte[] originalLSBsSizeBytes = LSBs.GetRange(4, 4).ToArray();
+            byte[] compressedData = LSBs.GetRange(8, LSBs.Count - 8).ToArray();
+            int localityVectorSize = BitConverter.ToInt32(localityVectorSizeBytes, 0);
+            int originalLSBsSize = BitConverter.ToInt32(originalLSBsSizeBytes, 0);
+            byte[] originalData = RLE<byte>.Decode(compressedData).ToArray();
+            byte[] localityVector = new List<byte>(originalData).GetRange(0, localityVectorSize).ToArray();
+            byte[] originalLSBsVector = new List<byte>(originalData).GetRange(localityVectorSize, originalLSBsSize).ToArray();
+            byte[] payload = new List<byte>(originalData).GetRange(localityVectorSize + originalLSBsSize, originalData.Length - (localityVectorSize + originalLSBsSize)).ToArray();
+            bool[] localityVectorBits = new List<byte>(localityVector).SelectMany(GetBits).ToArray();
+            bool[] originalLSBsVectorBits = new List<byte>(originalLSBsVector).SelectMany(GetBits).ToArray();
+            bool[] payloadBits = new List<byte>(payload).SelectMany(GetBits).ToArray();
+            int bitNumber = 0;
+            for(int i = 0; i < differences.GetLength(0); i++)
+            {
+                for(int j = 0; j < differences.GetLength(1); j++)
+                {
+                    if (setsIds[i, j] == DecodingSetName.CH)
+                    {
+                        if(localityVectorBits[i * differences.GetLength(0) + j])
+                        {
+                            differences[i, j] = differences[i, j] / 2;
+                        }
+                        else
+                        {
+                            if (differences[i, j] == 0 || differences[i, j] == 1)
+                            {
+                                differences[i, j] = 1;
+                            }
+                            else if (differences[i, j] == -2 || differences[i, j] == -1)
+                            {
+                                differences[i, j] = -2;
+                            }
+                            else
+                            {
+                                differences[i, j] = 2 * (differences[i, j] / 2) + GetIntValue(originalLSBsVectorBits[bitNumber]);
+                                bitNumber++;
+                            }
+                        }
+                    }
+                }
+            }
+            Bitmap originalImage = GenerateEmbeddedImage(image, averages, differences, direction);
+            string payloadString = Encoding.ASCII.GetString(payload);
+            return new Tuple<Bitmap, string>(originalImage, payloadString);
         }
 
     }
@@ -287,12 +354,18 @@ namespace ReversibleSignatureAnalyzer.Model
         Vertical
     }
 
-    enum SetName
+    enum EncodingSetName
     {
         EZ,
         EN1,
         EN2,
         CN,
+        NC
+    }
+
+    enum DecodingSetName
+    {
+        CH,
         NC
     }
 

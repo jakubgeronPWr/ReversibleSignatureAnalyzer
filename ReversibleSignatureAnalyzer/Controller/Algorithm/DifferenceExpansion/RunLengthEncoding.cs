@@ -144,7 +144,7 @@ static class RLE<T> where T : struct, IConvertible
         {
             case TypeCode.Byte:
                 {
-                    byte limit = 254;
+                    byte limit = Byte.MaxValue;
                     rleMarker = __refvalue( __makeref(limit),T);
                     maxLength = (ulong)(limit - 1);
                     break;
