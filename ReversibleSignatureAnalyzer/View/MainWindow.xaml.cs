@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.VisualBasic.CompilerServices;
 using ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting;
@@ -17,13 +18,16 @@ namespace ReversibleSignatureAnalyzer.View
     /// </summary>
     public partial class MainWindow : Window
     {
-        string path = (new System.Uri(Assembly.GetExecutingAssembly().CodeBase)).AbsolutePath;
-        string projectDirectory = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName;
+        private string BAD_FILE_NAME = "BAD FILE NAME";
+        private string SUCCESS = "SUCCESS";
+
+        private string path = (new System.Uri(Assembly.GetExecutingAssembly().CodeBase)).AbsolutePath;
+        private string projectDirectory = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName;
         private AddSignatureController addSignatureController;
         private IReversibleWatermarkingAlgorithm selectedAlgorithm;
         private bool isFileLoaded = true;
         private BitmapImage importedImage;
-        private BitmapImage watermarkedImage;
+        private BitmapImage resultImage;
         private String activityType;
 
         public MainWindow()
@@ -39,7 +43,7 @@ namespace ReversibleSignatureAnalyzer.View
             //tv_import_file_path.Visibility = Visibility.Collapsed;
 
             BtnExportFile.Visibility = Visibility.Collapsed;
-            tv_export_file_path.Visibility = Visibility.Collapsed;
+            TvExportFileName.Visibility = Visibility.Collapsed;
         }
 
         private void SetStartup()
@@ -74,6 +78,9 @@ namespace ReversibleSignatureAnalyzer.View
             TvImportFilePath.Text = fileName;
             importedImage = new BitmapImage(new Uri(fileName));
             ImgImport.Source = importedImage;
+            ImgExport.Source = null;
+            SetTextRichTextBox(TvPayload, "Place for payload");
+            TvExportFileName.Text = "";
         }
 
         private void BtnRun_Click(object sender, RoutedEventArgs e)
@@ -82,22 +89,19 @@ namespace ReversibleSignatureAnalyzer.View
             GetSelectedAlgorithm();
             if (isFileLoaded && CbActivityType.Text == TbAdd.Content.ToString())
             {
-                watermarkedImage = addSignatureController.GetWatermarkedImage(importedImage, "Ala ma kota a kota ma ale.", selectedAlgorithm);
-                ImgExport.Source = watermarkedImage;
-                Console.WriteLine(watermarkedImage.UriSource);
-                BtnExportFile.Visibility = Visibility.Visible;
-                tv_export_file_path.Visibility = Visibility.Visible;
+                resultImage = addSignatureController.GetWatermarkedImage(importedImage, secretPayload, selectedAlgorithm);
             }
 
             if (isFileLoaded && CbActivityType.Text == TbAnalyze.Content.ToString())
             {
-                watermarkedImage = addSignatureController.GetDecodedImage(importedImage, selectedAlgorithm).Item1;
+                resultImage = addSignatureController.GetDecodedImage(importedImage, selectedAlgorithm).Item1;
                 SetTextRichTextBox(TvPayload ,addSignatureController.GetDecodedImage(importedImage, selectedAlgorithm).Item2);
-                ImgExport.Source = watermarkedImage;
-                Console.WriteLine(watermarkedImage.UriSource);
-                BtnExportFile.Visibility = Visibility.Visible;
-                tv_export_file_path.Visibility = Visibility.Visible;
             }
+
+            ImgExport.Source = resultImage;
+            Console.WriteLine(resultImage.UriSource);
+            BtnExportFile.Visibility = Visibility.Visible;
+            TvExportFileName.Visibility = Visibility.Visible;
         }
 
         private string GetTextFromRichTextBox(RichTextBox rtb)
@@ -129,6 +133,57 @@ namespace ReversibleSignatureAnalyzer.View
             {
                 selectedAlgorithm = new HistogramShiftingAlgorithm();
             }
+        }
+
+        private void BtnExportFile_Click(object sender, RoutedEventArgs e)
+        {
+            string fileName = TvExportFileName.Text;
+
+            if (CheckFileName(fileName))
+            {
+                string filePath = $"{projectDirectory}/Model/_img/{fileName}.png";
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    BitmapEncoder encoder = new PngBitmapEncoder();
+                    encoder.Frames.Add(BitmapFrame.Create(resultImage));
+                    encoder.Save(fileStream);
+                    OperationSuccessNotify("");
+                }
+            }
+            else
+            {
+                OperationErrorNotify(BAD_FILE_NAME);
+            }
+        }
+
+        private void OperationSuccessNotify(string msg)
+        {
+            TvOperationResult.Text = $"{SUCCESS} {msg}";
+            TvOperationResult.Foreground = Brushes.ForestGreen;
+        }
+
+        private void OperationErrorNotify(string msg)
+        {
+            TvOperationResult.Text = msg;
+            TvOperationResult.Foreground = Brushes.Red;
+        }
+
+        private bool CheckFileName(string fileName)
+        {
+
+            if (fileName.Contains(" "))
+            {
+                return false;
+            }
+            if (fileName.Replace(" ", "") == "")
+            {
+                return false;
+            }
+            if (fileName.Contains('.'))
+            {
+                return false;
+            }
+            return true;
         }
 
     }
