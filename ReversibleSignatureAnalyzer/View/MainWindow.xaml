@@ -44,7 +44,7 @@
 
 
         <Button x:Name="BtnRun" Content="RUN" Grid.Row="1" Grid.Column="0" VerticalAlignment="Top" Height="40" Background="#FFA41515" Panel.ZIndex="-4" FontSize="18" FontWeight="Bold" Foreground="White" Margin="15,80,15,0" Click="BtnRun_Click" />
-        <RichTextBox Height="128" Margin="15,125,15,80" Grid.Row="1" VerticalAlignment="Top">
+        <RichTextBox x:Name="TvPayload" Height="128" Margin="15,125,15,80" Grid.Row="1" VerticalAlignment="Top">
             <FlowDocument>
                 <Paragraph>
                     <Run Text="Your message to hide..."/>

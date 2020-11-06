@@ -4,8 +4,11 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Media.Imaging;
 using Microsoft.VisualBasic.CompilerServices;
+using ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting;
 
 namespace ReversibleSignatureAnalyzer.View
 {
@@ -43,7 +46,7 @@ namespace ReversibleSignatureAnalyzer.View
             RbAlgorithm1.IsChecked = true;
             CbActivityType.SelectedIndex = 0;
             addSignatureController = new AddSignatureController();
-            selectedAlgorithm = new DifferencesExpansionAlgorithm(20, 1, Direction.Horizontal);
+            RbAlgorithm1.IsChecked = true;
             ImportImage(projectDirectory + "/Model/_img/lena.png");
         }
 
@@ -73,13 +76,44 @@ namespace ReversibleSignatureAnalyzer.View
 
         private void BtnRun_Click(object sender, RoutedEventArgs e)
         {
+            var secretPayload = GetTextFromRichTextBox(TvPayload);
+            GetSelectedAlgorithm();
             if (isFileLoaded)
             {
-                watermarkedImage = addSignatureController.GetWatermarkedImage(importedImage, "Ala ma kota a kot ma ale gsdgos dds gojsdf gdsf gsdfhg dsg sdf gsdhgdg gdh jdj hd jhd jgfg esrgesrg sgh srtg ers gseh sf hsgsdg gdfsg hsg dfg sdfg sdf gdsf ghsgh esghsh sgh sdgh sdfh ersg erghrshdrth rthertge a gesr ge aa rgseg sdgeagt shgs hrthtwae rhrts erthres rhrts taerjrtsya eshrystyerdt yhjtdrsyeatw eyshyjhjytrsyeat dghjdytrsyehjhmkit76ryrhtnhm nbvxghtdyr brthnyytrhgb ghdrt yrhg nyrtshjfyu srm,ytr jmghtdr dfgrd", selectedAlgorithm);
+                watermarkedImage = addSignatureController.GetWatermarkedImage(importedImage, "Ala ma kota a kota ma ale.", selectedAlgorithm);
                 ImgExport.Source = watermarkedImage;
+                Console.WriteLine(watermarkedImage.UriSource);
                 BtnExportFile.Visibility = Visibility.Visible;
                 tv_export_file_path.Visibility = Visibility.Visible;
             }
         }
+
+        private string GetTextFromRichTextBox(RichTextBox rtb)
+        {
+            TextRange tr = new TextRange(
+                rtb.Document.ContentStart,
+                rtb.Document.ContentEnd
+                );
+            return tr.Text;
+        }
+
+        private void GetSelectedAlgorithm()
+        {
+            if (RbAlgorithm1.IsChecked.Value)
+            {
+                selectedAlgorithm = new DifferencesExpansionAlgorithm(20, 1, Direction.Horizontal);
+            }
+            else if (RbAlgorithm2.IsChecked.Value)
+            {
+                selectedAlgorithm = new DifferencesExpansionAlgorithm(20, 1, Direction.Horizontal);
+            }
+            else if (RbAlgorithm3.IsChecked.Value)
+            {
+                selectedAlgorithm = new HistogramShiftingAlgorithm();
+            }
+            
+
+        }
+
     }
 }
