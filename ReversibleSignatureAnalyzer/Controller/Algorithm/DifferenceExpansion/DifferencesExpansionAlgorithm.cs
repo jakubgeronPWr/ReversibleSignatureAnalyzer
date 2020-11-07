@@ -23,6 +23,7 @@ namespace ReversibleSignatureAnalyzer.Model
         public Bitmap Encode(Bitmap inputImage, string payload)
         {
             Bitmap image = new Bitmap(inputImage);
+            int[,] pixelValues = GetPixelValues(image);
             int[,] averages = Calculate(image, CalculateAverage, direction);
             int[,] differences = Calculate(image, CalculateDifference, direction);
             int[,] localityMap = GetEmptyArrayAdjustedToImageSize(image, direction);
@@ -80,7 +81,8 @@ namespace ReversibleSignatureAnalyzer.Model
 
             byte[] localityVectorSize = BitConverter.GetBytes((uint)localityVector.Count);
             byte[] LSBsSize = BitConverter.GetBytes((uint)LSBs.Count);
-            byte[] header = ConcatArrays(localityVectorSize, LSBsSize);
+            byte[] payloadSize = BitConverter.GetBytes(payload.Length);
+            byte[] header = ConcatArrays(localityVectorSize, LSBsSize, payloadSize);
             byte[] data = ConcatArrays(localityVector.ToArray(), LSBs.ToArray(), Encoding.ASCII.GetBytes(payload));
             byte[] compressedData = RLE<byte>.Encode(new List<byte>(data)).ToArray(); 
             byte[] embeddingStream = ConcatArrays(header, compressedData);
@@ -98,13 +100,33 @@ namespace ReversibleSignatureAnalyzer.Model
                     }
                     else if (setsIds[p, q] == EncodingSetName.EN2 || setsIds[p, q] == EncodingSetName.CN)
                     {
-                        differences[p, q] = 2 * (differences[p, q] / 2) + GetIntValue(bits[bitNumber]);
+                        differences[p, q] = 2 * DivideAndFloor(differences[p, q], 2) + GetIntValue(bits[bitNumber]);
                         bitNumber++;
                     }
                 }
             }
 
-            return GenerateEmbeddedImage(image, averages, differences, direction);
+            Bitmap embedded = GenerateEmbeddedImage(image, averages, differences, direction);
+            int[,] pixelValuesEmbedded = GetPixelValues(embedded);
+            return embedded;
+        }
+
+        private int DivideAndFloor(double number, double divisor)
+        {
+            return (int) Math.Floor(number / divisor);
+        }
+
+        private int [,] GetPixelValues(Bitmap image)
+        {
+            int[,] values = new int[image.Height, image.Width];
+            for(int y = 0; y < image.Height; y++)
+            {
+                for(int x = 0; x < image.Width; x++)
+                {
+                    values[y, x] = image.GetPixel(x, y).R;
+                }
+            }
+            return values;
         }
 
         private int [,] Calculate(Bitmap image, Func<int, int, int> operation, Direction direction)
@@ -143,7 +165,7 @@ namespace ReversibleSignatureAnalyzer.Model
         }
         private int CalculateAverage(int x, int y)
         {
-            return (x + y) / 2;
+            return (int) Math.Floor((((double) x) + y) / 2);
         }
 
         private int CalculateDifference(int x, int y)
@@ -168,8 +190,8 @@ namespace ReversibleSignatureAnalyzer.Model
 
         private bool IsChangeable(int i, int j, int[,] differences, int[,] averages)
         {
-            return Math.Abs(2 * (differences[i, j] / 2) + 0) <= Math.Min(2 * (255 - averages[i, j]), 2 * averages[i, j] + 1) &&
-                Math.Abs(2 * (differences[i, j] / 2) + 1) <= Math.Min(2 * (255 - averages[i, j]), 2 * averages[i, j] + 1);
+            return Math.Abs(2 * DivideAndFloor(differences[i, j], 2) + 0) <= Math.Min(2 * (255 - averages[i, j]), 2 * averages[i, j] + 1) &&
+                Math.Abs(2 * DivideAndFloor(differences[i, j], 2) + 1) <= Math.Min(2 * (255 - averages[i, j]), 2 * averages[i, j] + 1);
         }
 
         static List<int> ConvertToList(int[,] array)
@@ -183,14 +205,14 @@ namespace ReversibleSignatureAnalyzer.Model
         private List<byte> GetLeastSignificatBits(List<int> values)
         {
             List<byte> leastSignificantBits = new List<byte>();
-            int count = values.Count / 8;
-            int reminder = values.Count % 8;
-            int i = 0;
+            int count = values.Count;
+            int i;
+            int pos;
             int currentValue = 0;
-            for(; i < count; i++)
+            for(i = 0; i < count; i+=pos)
             {
                 currentValue = 0;
-                for(int pos = 0; pos < 8 && (i + pos) < values.Count; pos++)
+                for(pos = 0; pos < 8 && (i + pos) < count; pos++)
                 {
                     currentValue += (values[i + pos] & 1) * (int)(Math.Pow(2, 7 - pos));
                 }
@@ -247,9 +269,9 @@ namespace ReversibleSignatureAnalyzer.Model
                 for (int x = 0; x < image.Width / 2; x++)
                 {
                     Color currentXColor = image.GetPixel(2 * x, y);
-                    int XR = averages[y, x] + (newDifferences[y, x] + 1) / 2;
+                    int XR = averages[y, x] + DivideAndFloor(newDifferences[y, x] + 1, 2);
                     image.SetPixel(2 * x, y, Color.FromArgb(currentXColor.A, XR, currentXColor.G, currentXColor.B));
-                    int YR = averages[y, x] - newDifferences[y, x] / 2;
+                    int YR = averages[y, x] - DivideAndFloor(newDifferences[y, x], 2);
                     Color currentYColor = image.GetPixel(2 * x + 1, y);
                     image.SetPixel(2 * x + 1, y, Color.FromArgb(currentYColor.A, YR, currentYColor.G, currentYColor.B));
                 }
@@ -264,9 +286,9 @@ namespace ReversibleSignatureAnalyzer.Model
                 for (int x = 0; x < image.Width; x++)
                 {
                     Color currentXColor = image.GetPixel(x, 2 * y);
-                    int XR = averages[y, x] + (newDifferences[y, x] + 1) / 2;
+                    int XR = averages[y, x] + DivideAndFloor(newDifferences[y, x] + 1, 2);
                     image.SetPixel(x, 2 * y, Color.FromArgb(currentXColor.A, XR, currentXColor.G, currentXColor.B));
-                    int YR = averages[y, x] - newDifferences[y, x] / 2;
+                    int YR = averages[y, x] - DivideAndFloor(newDifferences[y, x], 2);
                     Color currentYColor = image.GetPixel(x, 2 * y + 1);
                     image.SetPixel(x, 2 * y + 1, Color.FromArgb(currentYColor.A, YR, currentYColor.G, currentYColor.B));
                 }
@@ -277,6 +299,7 @@ namespace ReversibleSignatureAnalyzer.Model
         public Tuple<Bitmap, string> Decode(Bitmap encodedImage)
         {
             Bitmap image = new Bitmap(encodedImage);
+            int[,] pixelValues = GetPixelValues(image);
             int[,] averages = Calculate(image, CalculateAverage, direction);
             int[,] differences = Calculate(image, CalculateDifference, direction);
             int[,] localityMap = GetEmptyArrayAdjustedToImageSize(image, direction);
@@ -301,13 +324,15 @@ namespace ReversibleSignatureAnalyzer.Model
             List<byte> LSBs = GetLeastSignificatBits(changeableDifferences);
             byte[] localityVectorSizeBytes = LSBs.GetRange(0, 4).ToArray();
             byte[] originalLSBsSizeBytes = LSBs.GetRange(4, 4).ToArray();
-            byte[] compressedData = LSBs.GetRange(8, LSBs.Count - 8).ToArray();
+            byte[] payloadSizeBytes = LSBs.GetRange(8, 4).ToArray();
+            byte[] compressedData = LSBs.GetRange(12, LSBs.Count - 12).ToArray();
             int localityVectorSize = BitConverter.ToInt32(localityVectorSizeBytes, 0);
             int originalLSBsSize = BitConverter.ToInt32(originalLSBsSizeBytes, 0);
+            int payloadSize = BitConverter.ToInt32(payloadSizeBytes, 0);
             byte[] originalData = RLE<byte>.Decode(compressedData).ToArray();
             byte[] localityVector = new List<byte>(originalData).GetRange(0, localityVectorSize).ToArray();
             byte[] originalLSBsVector = new List<byte>(originalData).GetRange(localityVectorSize, originalLSBsSize).ToArray();
-            byte[] payload = new List<byte>(originalData).GetRange(localityVectorSize + originalLSBsSize, originalData.Length - (localityVectorSize + originalLSBsSize)).ToArray();
+            byte[] payload = new List<byte>(originalData).GetRange(localityVectorSize + originalLSBsSize, payloadSize).ToArray();
             bool[] localityVectorBits = new List<byte>(localityVector).SelectMany(GetBits).ToArray();
             bool[] originalLSBsVectorBits = new List<byte>(originalLSBsVector).SelectMany(GetBits).ToArray();
             bool[] payloadBits = new List<byte>(payload).SelectMany(GetBits).ToArray();
@@ -318,9 +343,9 @@ namespace ReversibleSignatureAnalyzer.Model
                 {
                     if (setsIds[i, j] == DecodingSetName.CH)
                     {
-                        if(localityVectorBits[i * differences.GetLength(0) + j])
+                        if(localityVectorBits[i * differences.GetLength(1) + j])
                         {
-                            differences[i, j] = differences[i, j] / 2;
+                            differences[i, j] = DivideAndFloor(differences[i, j], 2);
                         }
                         else
                         {
@@ -334,7 +359,7 @@ namespace ReversibleSignatureAnalyzer.Model
                             }
                             else
                             {
-                                differences[i, j] = 2 * (differences[i, j] / 2) + GetIntValue(originalLSBsVectorBits[bitNumber]);
+                                differences[i, j] = 2 * DivideAndFloor(differences[i, j], 2) + GetIntValue(originalLSBsVectorBits[bitNumber]);
                                 bitNumber++;
                             }
                         }
