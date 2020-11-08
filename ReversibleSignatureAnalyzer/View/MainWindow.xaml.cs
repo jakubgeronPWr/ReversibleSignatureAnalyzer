@@ -186,5 +186,28 @@ namespace ReversibleSignatureAnalyzer.View
             return true;
         }
 
+        private void BtnConfigDE_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new ConfigurationDialogBox.DifferencesExpansionConfiguraitonDialogBox
+            {
+                Owner = this,
+            };
+            dlg.ShowDialog();
+            if (dlg.DialogResult == true)
+            {
+
+            }
+        }
+
+        private void BtnConfigSVD_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void BtnConfigHS_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
     }
 }
