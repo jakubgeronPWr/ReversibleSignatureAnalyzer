@@ -10,6 +10,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.VisualBasic.CompilerServices;
 using ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting;
+using ReversibleSignatureAnalyzer.Controller.Algorithm.DifferenceExpansion;
+using ReversibleSignatureAnalyzer.Controller.Algorithm;
 
 namespace ReversibleSignatureAnalyzer.View
 {
@@ -28,7 +30,12 @@ namespace ReversibleSignatureAnalyzer.View
         private bool isFileLoaded = true;
         private BitmapImage importedImage;
         private BitmapImage resultImage;
-        private String activityType;
+        private string activityType;
+        private AlgorithmConfiguration currentDeConfiguration = new DifferencesExpansionConfiguration(1, 20, Direction.Horizontal, EmbeddingChanel.R);
+        private AlgorithmConfiguration selectedConfiguration = new DifferencesExpansionConfiguration(1, 20, Direction.Horizontal, EmbeddingChanel.R);
+        private IReversibleWatermarkingAlgorithm deAlgorithm = new DifferencesExpansionAlgorithm();
+        private IReversibleWatermarkingAlgorithm hsAlgorithm = new HistogramShiftingAlgorithm();
+
 
         public MainWindow()
         {
@@ -89,13 +96,14 @@ namespace ReversibleSignatureAnalyzer.View
             GetSelectedAlgorithm();
             if (isFileLoaded && CbActivityType.Text == TbAdd.Content.ToString())
             {
-                resultImage = addSignatureController.GetWatermarkedImage(importedImage, secretPayload, selectedAlgorithm);
+                resultImage = addSignatureController.GetWatermarkedImage(importedImage, secretPayload, selectedAlgorithm, selectedConfiguration);
             }
 
             if (isFileLoaded && CbActivityType.Text == TbAnalyze.Content.ToString())
             {
-                resultImage = addSignatureController.GetDecodedImage(importedImage, selectedAlgorithm).Item1;
-                SetTextRichTextBox(TvPayload ,addSignatureController.GetDecodedImage(importedImage, selectedAlgorithm).Item2);
+                Tuple<BitmapImage, string> imageAndPayload = addSignatureController.GetDecodedImage(importedImage, selectedAlgorithm, selectedConfiguration);
+                resultImage = imageAndPayload.Item1;
+                SetTextRichTextBox(TvPayload, imageAndPayload.Item2);
             }
 
             ImgExport.Source = resultImage;
@@ -123,15 +131,15 @@ namespace ReversibleSignatureAnalyzer.View
         {
             if (RbAlgorithm1.IsChecked.Value)
             {
-                selectedAlgorithm = new DifferencesExpansionAlgorithm(20, 1, Direction.Horizontal);
+                selectedAlgorithm = deAlgorithm;
             }
             else if (RbAlgorithm2.IsChecked.Value)
             {
-                selectedAlgorithm = new DifferencesExpansionAlgorithm(20, 1, Direction.Horizontal);
+                selectedAlgorithm = deAlgorithm;
             }
             else if (RbAlgorithm3.IsChecked.Value)
             {
-                selectedAlgorithm = new HistogramShiftingAlgorithm();
+                selectedAlgorithm = hsAlgorithm;
             }
         }
 

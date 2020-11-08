@@ -1,5 +1,7 @@
 
-﻿using ReversibleSignatureAnalyzer.Model.Algorithm;
+using ReversibleSignatureAnalyzer.Controller.Algorithm;
+using ReversibleSignatureAnalyzer.Controller.Algorithm.DifferenceExpansion;
+using ReversibleSignatureAnalyzer.Model.Algorithm;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -10,23 +12,15 @@ namespace ReversibleSignatureAnalyzer.Model
 {
     class DifferencesExpansionAlgorithm : IReversibleWatermarkingAlgorithm
     {
-        private int treshold;
-        private int iterations;
-        private Direction direction;
 
-        public DifferencesExpansionAlgorithm(int treshold, int iterations, Direction direction)
+        public Bitmap Encode(Bitmap inputImage, string payload, AlgorithmConfiguration configuration)
         {
-            this.treshold = treshold;
-            this.iterations = iterations;
-            this.direction = direction;
-        }
-        public Bitmap Encode(Bitmap inputImage, string payload)
-        {
+            DifferencesExpansionConfiguration config = (DifferencesExpansionConfiguration) configuration;
             Bitmap image = new Bitmap(inputImage);
             int[,] pixelValues = GetPixelValues(image);
-            int[,] averages = Calculate(image, CalculateAverage, direction);
-            int[,] differences = Calculate(image, CalculateDifference, direction);
-            int[,] localityMap = GetEmptyArrayAdjustedToImageSize(image, direction);
+            int[,] averages = Calculate(image, CalculateAverage, config.EmbeddingDirection);
+            int[,] differences = Calculate(image, CalculateDifference, config.EmbeddingDirection);
+            int[,] localityMap = GetEmptyArrayAdjustedToImageSize(image, config.EmbeddingDirection);
             EncodingSetName[,] setsIds = new EncodingSetName[localityMap.GetLength(0), localityMap.GetLength(1)];
             int EZSize = 0;
             int EN1Size = 0;
@@ -43,7 +37,7 @@ namespace ReversibleSignatureAnalyzer.Model
                             EZSize++;
                             setsIds[i, j] = EncodingSetName.EZ;
                         }
-                        else if (Math.Abs(differences[i, j]) <= treshold)
+                        else if (Math.Abs(differences[i, j]) <= config.Threeshold)
                         {
                             localityMap[i, j] = 1;
                             EN1Size++;
@@ -71,11 +65,9 @@ namespace ReversibleSignatureAnalyzer.Model
             }
 
             List<byte> localityVector = GetLeastSignificatBits(ConvertToList(localityMap));
-//            byte[] compressedLocalityVector = RLE<byte>.Encode(localityVector).ToArray();
 
             List<int> filteredEN2AndCN = EN2AndCN.Where(x => x != -2 && x != 1).ToList();
             List<byte> LSBs = GetLeastSignificatBits(filteredEN2AndCN);
- //           byte[] compressedLSBs = RLE<byte>.Encode(LSBs).ToArray();
 
             int embeddingCapacity = EZSize + EN1Size + EN2AndCN.Count;
 
@@ -106,7 +98,7 @@ namespace ReversibleSignatureAnalyzer.Model
                 }
             }
 
-            Bitmap embedded = GenerateEmbeddedImage(image, averages, differences, direction);
+            Bitmap embedded = GenerateEmbeddedImage(image, averages, differences, config.EmbeddingDirection);
             int[,] pixelValuesEmbedded = GetPixelValues(embedded);
             return embedded;
         }
@@ -296,13 +288,14 @@ namespace ReversibleSignatureAnalyzer.Model
             return image;
         }
 
-        public Tuple<Bitmap, string> Decode(Bitmap encodedImage)
+        public Tuple<Bitmap, string> Decode(Bitmap encodedImage, AlgorithmConfiguration configuration)
         {
+            DifferencesExpansionConfiguration config = (DifferencesExpansionConfiguration) configuration;
             Bitmap image = new Bitmap(encodedImage);
             int[,] pixelValues = GetPixelValues(image);
-            int[,] averages = Calculate(image, CalculateAverage, direction);
-            int[,] differences = Calculate(image, CalculateDifference, direction);
-            int[,] localityMap = GetEmptyArrayAdjustedToImageSize(image, direction);
+            int[,] averages = Calculate(image, CalculateAverage, config.EmbeddingDirection);
+            int[,] differences = Calculate(image, CalculateDifference, config.EmbeddingDirection);
+            int[,] localityMap = GetEmptyArrayAdjustedToImageSize(image, config.EmbeddingDirection);
             DecodingSetName[,] setsIds = new DecodingSetName[localityMap.GetLength(0), localityMap.GetLength(1)];
             List<int> changeableDifferences = new List<int>();
 
@@ -366,7 +359,7 @@ namespace ReversibleSignatureAnalyzer.Model
                     }
                 }
             }
-            Bitmap originalImage = GenerateEmbeddedImage(image, averages, differences, direction);
+            Bitmap originalImage = GenerateEmbeddedImage(image, averages, differences, config.EmbeddingDirection);
             string payloadString = Encoding.ASCII.GetString(payload);
             return new Tuple<Bitmap, string>(originalImage, payloadString);
         }

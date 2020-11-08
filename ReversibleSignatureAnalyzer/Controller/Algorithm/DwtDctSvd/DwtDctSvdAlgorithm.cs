@@ -10,12 +10,12 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
 {
     public class DwtDctSvdAlgorithm: IReversibleWatermarkingAlgorithm
     {
-        public Bitmap Encode(Bitmap inputImage, string payload)
+        public Bitmap Encode(Bitmap inputImage, string payload, AlgorithmConfiguration configuration)
         {
             throw new NotImplementedException();
         }
 
-        public Tuple<Bitmap, string> Decode(Bitmap encodedImage)
+        public Tuple<Bitmap, string> Decode(Bitmap encodedImage, AlgorithmConfiguration configuration)
         {
             throw new NotImplementedException();
         }
