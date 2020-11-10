@@ -3,8 +3,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     x:Class="ConfigurationDialogBox.DifferencesExpansionConfiguraitonDialogBox"
     xmlns:local="clr-namespace:ConfigurationDialogBox"
-    Title="Margins"
-    Height="190"
+    Title="Configuration"
+    Height="230"
     Width="300"
     MinHeight="10"
     MinWidth="300"
@@ -61,14 +61,21 @@
             <Button x:Name="cmdDown" Height="Auto" VerticalAlignment="Center" x:FieldModifier="private" Margin="0,0,0,10"  Content="˅" MinWidth="20" Width="Auto" Click="cmdDown_Click" />
         </StackPanel>
 
-        <Label Grid.Column="0" Grid.Row="1">Embedding direction:</Label>
-        <ComboBox Name="cbEmbeddingDirection" Grid.Column="1" Grid.Row="1">
+        <Label Grid.Column="0" Grid.Row="1">Treeshold:</Label>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,0" Height="Auto" Width="Auto" Grid.Column="1" Grid.Row="1">
+            <TextBox x:Name="tbThreshold" Height="Auto" MinWidth="107" Width="Auto" VerticalAlignment="Center" x:FieldModifier="private" Margin="0,0,0,10" Text="20" TextChanged="txtThreshold_TextChanged" />
+            <Button x:Name="thresholdUp" Height="Auto" VerticalAlignment="Center" x:FieldModifier="private" Margin="0,0,0,10" Content="˄" MinWidth="20" Width="Auto" Click="thresholdUp_Click" />
+            <Button x:Name="thresholdDown" Height="Auto" VerticalAlignment="Center" x:FieldModifier="private" Margin="0,0,0,10"  Content="˅" MinWidth="20" Width="Auto" Click="thresholdDown_Click" />
+        </StackPanel>
+
+        <Label Grid.Column="0" Grid.Row="2">Embedding direction:</Label>
+        <ComboBox Name="cbEmbeddingDirection" Grid.Column="1" Grid.Row="2">
             <ComboBoxItem IsSelected="True">Horizontal</ComboBoxItem>
             <ComboBoxItem>Vertical</ComboBoxItem>
         </ComboBox>
 
-        <Label Grid.Column="0" Grid.Row="2">Embedding chanel:</Label>
-        <ComboBox Name="cbEmbeddingChanel" Grid.Column="1" Grid.Row="2">
+        <Label Grid.Column="0" Grid.Row="3">Embedding chanel:</Label>
+        <ComboBox Name="cbEmbeddingChanel" Grid.Column="1" Grid.Row="3">
             <ComboBoxItem IsSelected="True">R</ComboBoxItem>
             <ComboBoxItem>G</ComboBoxItem>
             <ComboBoxItem>B</ComboBoxItem>

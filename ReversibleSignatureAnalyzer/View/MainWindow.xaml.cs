@@ -26,7 +26,6 @@ namespace ReversibleSignatureAnalyzer.View
         private string path = (new System.Uri(Assembly.GetExecutingAssembly().CodeBase)).AbsolutePath;
         private string projectDirectory = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName;
         private AddSignatureController addSignatureController;
-        private IReversibleWatermarkingAlgorithm selectedAlgorithm;
         private bool isFileLoaded = true;
         private BitmapImage importedImage;
         private BitmapImage resultImage;
@@ -46,9 +45,6 @@ namespace ReversibleSignatureAnalyzer.View
 
         private void HideStartUp()
         {
-            //btn_import_file.Visibility = Visibility.Collapsed;
-            //tv_import_file_path.Visibility = Visibility.Collapsed;
-
             BtnExportFile.Visibility = Visibility.Collapsed;
             TvExportFileName.Visibility = Visibility.Collapsed;
         }
@@ -93,15 +89,16 @@ namespace ReversibleSignatureAnalyzer.View
         private void BtnRun_Click(object sender, RoutedEventArgs e)
         {
             var secretPayload = GetTextFromRichTextBox(TvPayload);
-            GetSelectedAlgorithm();
+            IReversibleWatermarkingAlgorithm selectedAlgorithm = GetSelectedAlgorithm();
+            AlgorithmConfiguration configuration = GetConfigurationForSelectedAlgorithm();
             if (isFileLoaded && CbActivityType.Text == TbAdd.Content.ToString())
             {
-                resultImage = addSignatureController.GetWatermarkedImage(importedImage, secretPayload, selectedAlgorithm, selectedConfiguration);
+                resultImage = addSignatureController.GetWatermarkedImage(importedImage, secretPayload, selectedAlgorithm, configuration);
             }
 
             if (isFileLoaded && CbActivityType.Text == TbAnalyze.Content.ToString())
             {
-                Tuple<BitmapImage, string> imageAndPayload = addSignatureController.GetDecodedImage(importedImage, selectedAlgorithm, selectedConfiguration);
+                Tuple<BitmapImage, string> imageAndPayload = addSignatureController.GetDecodedImage(importedImage, selectedAlgorithm, configuration);
                 resultImage = imageAndPayload.Item1;
                 SetTextRichTextBox(TvPayload, imageAndPayload.Item2);
             }
@@ -127,20 +124,38 @@ namespace ReversibleSignatureAnalyzer.View
             rtb.Document.Blocks.Add(new Paragraph(new Run(text)));
         }
 
-        private void GetSelectedAlgorithm()
+        private IReversibleWatermarkingAlgorithm GetSelectedAlgorithm()
         {
             if (RbAlgorithm1.IsChecked.Value)
             {
-                selectedAlgorithm = deAlgorithm;
+                return deAlgorithm;
             }
             else if (RbAlgorithm2.IsChecked.Value)
             {
-                selectedAlgorithm = deAlgorithm;
+                return deAlgorithm;
             }
             else if (RbAlgorithm3.IsChecked.Value)
             {
-                selectedAlgorithm = hsAlgorithm;
+                return hsAlgorithm;
             }
+            throw new Exception("No algorithm selected");
+        }
+
+        private AlgorithmConfiguration GetConfigurationForSelectedAlgorithm()
+        {
+            if (RbAlgorithm1.IsChecked.Value)
+            {
+                return currentDeConfiguration;
+            }
+            else if (RbAlgorithm2.IsChecked.Value)
+            {
+                return currentDeConfiguration;
+            }
+            else if (RbAlgorithm3.IsChecked.Value)
+            {
+                return currentDeConfiguration;
+            }
+            throw new Exception("No algorithm selected");
         }
 
         private void BtnExportFile_Click(object sender, RoutedEventArgs e)
@@ -196,14 +211,18 @@ namespace ReversibleSignatureAnalyzer.View
 
         private void BtnConfigDE_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new ConfigurationDialogBox.DifferencesExpansionConfiguraitonDialogBox
+            var dialogBox = new ConfigurationDialogBox.DifferencesExpansionConfiguraitonDialogBox
             {
                 Owner = this,
             };
-            dlg.ShowDialog();
-            if (dlg.DialogResult == true)
+            dialogBox.ShowDialog();
+            if (dialogBox.DialogResult == true)
             {
-
+                Direction direction;
+                EmbeddingChanel embeddingChanel;
+                Enum.TryParse(dialogBox.cbEmbeddingDirection.Text, out direction);
+                Enum.TryParse(dialogBox.cbEmbeddingChanel.Text, out embeddingChanel);
+                currentDeConfiguration = new DifferencesExpansionConfiguration(dialogBox.IterationsNumber, dialogBox.Threshold, direction, embeddingChanel);
             }
         }
 

@@ -11,7 +11,7 @@ namespace ConfigurationDialogBox
         public DifferencesExpansionConfiguraitonDialogBox()
         {
             InitializeComponent();
-            tbIterations.Text = _numValue.ToString();
+            tbIterations.Text = iterationsNumber.ToString();
         }
 
         public Thickness DocumentMargin
@@ -51,28 +51,28 @@ namespace ConfigurationDialogBox
             return LogicalTreeHelper.GetChildren(node).OfType<DependencyObject>().All(IsValid);
         }
 
-        private int _numValue = 1;
+        private int iterationsNumber = 1;
 
-        public int NumValue
+        public int IterationsNumber
         {
-            get { return _numValue; }
+            get { return iterationsNumber; }
             set
             {
-                _numValue = value;
+                iterationsNumber = value;
                 tbIterations.Text = value.ToString();
             }
         }
 
         private void cmdUp_Click(object sender, RoutedEventArgs e)
         {
-            NumValue++;
+            IterationsNumber++;
         }
 
         private void cmdDown_Click(object sender, RoutedEventArgs e)
         {
-            if (_numValue > 1)
+            if (iterationsNumber > 1)
             {
-                NumValue--;
+                IterationsNumber--;
             }     
         }
 
@@ -82,10 +82,48 @@ namespace ConfigurationDialogBox
             {
                 return;
             }
-            if (!int.TryParse(tbIterations.Text, out _numValue))
+            if (!int.TryParse(tbIterations.Text, out iterationsNumber))
             {
-                _numValue = 1;
-                tbIterations.Text = _numValue.ToString();
+                iterationsNumber = 1;
+                tbIterations.Text = iterationsNumber.ToString();
+            }
+        }
+
+        private int threshold = 1;
+
+        public int Threshold
+        {
+            get { return threshold; }
+            set
+            {
+                threshold = value;
+                tbThreshold.Text = value.ToString();
+            }
+        }
+
+        private void thresholdUp_Click(object sender, RoutedEventArgs e)
+        {
+            Threshold++;
+        }
+
+        private void thresholdDown_Click(object sender, RoutedEventArgs e)
+        {
+            if (Threshold > 1)
+            {
+                Threshold--;
+            }
+        }
+
+        private void txtThreshold_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (tbThreshold == null)
+            {
+                return;
+            }
+            if (!int.TryParse(tbThreshold.Text, out threshold))
+            {
+                iterationsNumber = 1;
+                tbThreshold.Text = threshold.ToString();
             }
         }
     }
