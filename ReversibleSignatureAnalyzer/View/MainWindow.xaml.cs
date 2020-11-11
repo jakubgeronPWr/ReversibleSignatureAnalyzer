@@ -12,6 +12,7 @@ using Microsoft.VisualBasic.CompilerServices;
 using ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting;
 using ReversibleSignatureAnalyzer.Controller.Algorithm.DifferenceExpansion;
 using ReversibleSignatureAnalyzer.Controller.Algorithm;
+using System.Collections.Generic;
 
 namespace ReversibleSignatureAnalyzer.View
 {
@@ -30,8 +31,7 @@ namespace ReversibleSignatureAnalyzer.View
         private BitmapImage importedImage;
         private BitmapImage resultImage;
         private string activityType;
-        private AlgorithmConfiguration currentDeConfiguration = new DifferencesExpansionConfiguration(1, 20, Direction.Horizontal, EmbeddingChanel.R);
-        private AlgorithmConfiguration selectedConfiguration = new DifferencesExpansionConfiguration(1, 20, Direction.Horizontal, EmbeddingChanel.R);
+        private AlgorithmConfiguration currentDeConfiguration = new DifferencesExpansionConfiguration(1, 20, Direction.Horizontal, new HashSet<EmbeddingChanel>(){ EmbeddingChanel.R });
         private IReversibleWatermarkingAlgorithm deAlgorithm = new DifferencesExpansionAlgorithm();
         private IReversibleWatermarkingAlgorithm hsAlgorithm = new HistogramShiftingAlgorithm();
 
@@ -211,7 +211,12 @@ namespace ReversibleSignatureAnalyzer.View
 
         private void BtnConfigDE_Click(object sender, RoutedEventArgs e)
         {
-            var dialogBox = new ConfigurationDialogBox.DifferencesExpansionConfiguraitonDialogBox
+            DifferencesExpansionConfiguration config = (DifferencesExpansionConfiguration) currentDeConfiguration;
+            var dialogBox = new ConfigurationDialogBox.DifferencesExpansionConfiguraitonDialogBox(
+                config.Iterations,
+                config.Threeshold,
+                config.EmbeddingDirection,
+                config.EmbeddingChanels)
             {
                 Owner = this,
             };
@@ -219,10 +224,21 @@ namespace ReversibleSignatureAnalyzer.View
             if (dialogBox.DialogResult == true)
             {
                 Direction direction;
-                EmbeddingChanel embeddingChanel;
                 Enum.TryParse(dialogBox.cbEmbeddingDirection.Text, out direction);
-                Enum.TryParse(dialogBox.cbEmbeddingChanel.Text, out embeddingChanel);
-                currentDeConfiguration = new DifferencesExpansionConfiguration(dialogBox.IterationsNumber, dialogBox.Threshold, direction, embeddingChanel);
+                HashSet<EmbeddingChanel> embeddingChanels = new HashSet<EmbeddingChanel>();
+                if (dialogBox.cbR.IsChecked == true)
+                {
+                    embeddingChanels.Add(EmbeddingChanel.R);
+                }
+                if (dialogBox.cbG.IsChecked == true)
+                {
+                    embeddingChanels.Add(EmbeddingChanel.G);
+                }
+                if (dialogBox.cbB.IsChecked == true)
+                {
+                    embeddingChanels.Add(EmbeddingChanel.B);
+                }
+                currentDeConfiguration = new DifferencesExpansionConfiguration(dialogBox.IterationsNumber, dialogBox.Threshold, direction, embeddingChanels);
             }
         }
 

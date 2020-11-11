@@ -74,13 +74,12 @@
             <ComboBoxItem>Vertical</ComboBoxItem>
         </ComboBox>
 
-        <Label Grid.Column="0" Grid.Row="3">Embedding chanel:</Label>
-        <ComboBox Name="cbEmbeddingChanel" Grid.Column="1" Grid.Row="3">
-            <ComboBoxItem IsSelected="True">R</ComboBoxItem>
-            <ComboBoxItem>G</ComboBoxItem>
-            <ComboBoxItem>B</ComboBoxItem>
-            <ComboBoxItem>All</ComboBoxItem>
-        </ComboBox>
+        <Label Grid.Column="0" Grid.Row="3">Embedding channels:</Label>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,0" Height="Auto" Width="Auto" Grid.Column="1" Grid.Row="3">
+            <CheckBox Name="cbR" IsChecked="True" Margin="0,2,0,0">R</CheckBox>
+            <CheckBox Name="cbG" Margin="20,2,0,10">G</CheckBox>
+            <CheckBox Name="cbB" Margin="20,2,0,10">B</CheckBox>
+        </StackPanel>
 
         <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="5">
             <Button Name="okButton" Click="okButton_Click" IsDefault="True">OK</Button>

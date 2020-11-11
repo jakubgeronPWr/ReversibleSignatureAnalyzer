@@ -9,12 +9,12 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm
     {
 
         public int Iterations { get; set; }
-        public EmbeddingChanel EmbeddingChanel { get; set; }
+        public HashSet<EmbeddingChanel> EmbeddingChanels { get; set; }
 
-        public AlgorithmConfiguration(int iterations, EmbeddingChanel embeddingChanel)
+        public AlgorithmConfiguration(int iterations, HashSet<EmbeddingChanel> embeddingChanels)
         {
             this.Iterations = iterations;
-            this.EmbeddingChanel = embeddingChanel;
+            this.EmbeddingChanels = embeddingChanels;
         }
 
     }

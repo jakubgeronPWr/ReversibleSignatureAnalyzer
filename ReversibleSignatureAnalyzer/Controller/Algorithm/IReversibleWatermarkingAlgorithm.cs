@@ -16,8 +16,7 @@ namespace ReversibleSignatureAnalyzer.Model
     {
         R,
         G,
-        B,
-        All
+        B
     }
 
 }

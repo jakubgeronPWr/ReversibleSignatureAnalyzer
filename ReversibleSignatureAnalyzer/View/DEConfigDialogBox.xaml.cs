@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using ReversibleSignatureAnalyzer.Model;
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -8,10 +10,17 @@ namespace ConfigurationDialogBox
 {
     public partial class DifferencesExpansionConfiguraitonDialogBox : Window
     {
-        public DifferencesExpansionConfiguraitonDialogBox()
+        public DifferencesExpansionConfiguraitonDialogBox(int iterationsNumber, int threshold, Direction embeddingDirection, HashSet<EmbeddingChanel> embeddingChanels)
         {
             InitializeComponent();
+            this.iterationsNumber = iterationsNumber;
+            this.threshold = threshold;
             tbIterations.Text = iterationsNumber.ToString();
+            tbThreshold.Text = threshold.ToString();
+            cbEmbeddingDirection.SelectedIndex = (int) embeddingDirection;
+            cbR.IsChecked = embeddingChanels.Contains(EmbeddingChanel.R);
+            cbG.IsChecked = embeddingChanels.Contains(EmbeddingChanel.G);
+            cbB.IsChecked = embeddingChanels.Contains(EmbeddingChanel.B);
         }
 
         public Thickness DocumentMargin
@@ -65,14 +74,14 @@ namespace ConfigurationDialogBox
 
         private void cmdUp_Click(object sender, RoutedEventArgs e)
         {
-            IterationsNumber++;
+            //IterationsNumber++;
         }
 
         private void cmdDown_Click(object sender, RoutedEventArgs e)
         {
             if (iterationsNumber > 1)
             {
-                IterationsNumber--;
+                //IterationsNumber--;
             }     
         }
 
