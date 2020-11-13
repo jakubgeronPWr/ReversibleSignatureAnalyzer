@@ -9,6 +9,7 @@ using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.VisualBasic.CompilerServices;
+using ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd;
 using ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting;
 
 namespace ReversibleSignatureAnalyzer.View
@@ -127,7 +128,7 @@ namespace ReversibleSignatureAnalyzer.View
             }
             else if (RbAlgorithm2.IsChecked.Value)
             {
-                selectedAlgorithm = new DifferencesExpansionAlgorithm(20, 1, Direction.Horizontal);
+                selectedAlgorithm = new DwtDctSvdAlgorithm();
             }
             else if (RbAlgorithm3.IsChecked.Value)
             {
