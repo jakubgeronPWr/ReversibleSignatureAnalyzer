@@ -34,6 +34,7 @@ namespace ReversibleSignatureAnalyzer.View
         private string activityType;
         private AlgorithmConfiguration currentDeConfiguration = new DifferencesExpansionConfiguration(1, 20, Direction.Horizontal, new HashSet<EmbeddingChanel>(){ EmbeddingChanel.R });
         private IReversibleWatermarkingAlgorithm deAlgorithm = new DifferencesExpansionAlgorithm();
+        private IReversibleWatermarkingAlgorithm dwtDctSvdAlgotithm = new DwtDctSvdAlgorithm();
         private IReversibleWatermarkingAlgorithm hsAlgorithm = new HistogramShiftingAlgorithm();
 
 
@@ -133,7 +134,7 @@ namespace ReversibleSignatureAnalyzer.View
             }
             else if (RbAlgorithm2.IsChecked.Value)
             {
-                return deAlgorithm;
+                return dwtDctSvdAlgotithm;
             }
             else if (RbAlgorithm3.IsChecked.Value)
             {

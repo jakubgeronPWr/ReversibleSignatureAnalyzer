@@ -24,7 +24,7 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             _dctHandler = new DctAlgorithm();
         }
 
-        public Bitmap Encode(Bitmap inputImage, string payload)
+        public Bitmap Encode(Bitmap inputImage, string payload, AlgorithmConfiguration algconfig)
         {
             
             //Bitmap newImage = new Bitmap(inputImage);
