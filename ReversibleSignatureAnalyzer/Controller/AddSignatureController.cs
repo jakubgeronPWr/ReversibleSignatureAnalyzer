@@ -1,4 +1,5 @@
-﻿using ReversibleSignatureAnalyzer.Model;
+﻿using ReversibleSignatureAnalyzer.Controller.Algorithm;
+using ReversibleSignatureAnalyzer.Model;
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -9,10 +10,10 @@ namespace ReversibleSignatureAnalyzer.Controller
 {
     public class AddSignatureController
     {
-        public BitmapImage GetWatermarkedImage(BitmapImage bitmapImage, string payload, IReversibleWatermarkingAlgorithm algorithm)
+        public BitmapImage GetWatermarkedImage(BitmapImage bitmapImage, string payload, IReversibleWatermarkingAlgorithm algorithm, AlgorithmConfiguration configuration)
         {
             Bitmap originalBitmap = BitmapImageToBitmap(bitmapImage);
-            Bitmap encodedBitmap = algorithm.Encode(originalBitmap, payload);
+            Bitmap encodedBitmap = algorithm.Encode(originalBitmap, payload, configuration);
             return BitmapToBitmapImage(encodedBitmap);
         }
 
@@ -43,10 +44,10 @@ namespace ReversibleSignatureAnalyzer.Controller
             }
         }
 
-        public Tuple<BitmapImage, string> GetDecodedImage(BitmapImage bitmapImage, IReversibleWatermarkingAlgorithm algorithm)
+        public Tuple<BitmapImage, string> GetDecodedImage(BitmapImage bitmapImage, IReversibleWatermarkingAlgorithm algorithm, AlgorithmConfiguration configuration)
         {
             Bitmap encodedImage = BitmapImageToBitmap(bitmapImage);
-            Tuple<Bitmap, string> decodingResult = algorithm.Decode(encodedImage);
+            Tuple<Bitmap, string> decodingResult = algorithm.Decode(encodedImage, configuration);
             return new Tuple<BitmapImage, string>(BitmapToBitmapImage(decodingResult.Item1), decodingResult.Item2);
         }
 

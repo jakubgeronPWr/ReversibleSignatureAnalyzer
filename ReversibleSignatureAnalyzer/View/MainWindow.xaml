@@ -55,6 +55,8 @@
         <Image x:Name="ImgExport" Grid.Column="1" HorizontalAlignment="Stretch" Margin="15,15,15,15" Grid.Row="1"/>
         <Border BorderThickness="2" BorderBrush="White" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch" Margin="15,15,15,15" VerticalAlignment="Stretch"/>
         <Border BorderThickness="2" BorderBrush="White" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" Margin="15,15,15,15" VerticalAlignment="Stretch"/>
-
+        <Button x:Name="BtnConfigureDE" Content="Configuration" Grid.Column="0" VerticalAlignment="Top" Height="18" Background="#FF959595" Panel.ZIndex="0" FontSize="11" FontWeight="Bold" Foreground="White" Margin="265,105,0,0" Click="BtnConfigDE_Click" HorizontalAlignment="Left" Width="130" />
+        <Button x:Name="BtnConfigureSVD" Content="Configuration" Grid.Column="0" VerticalAlignment="Top" Height="18" Background="#FF959595" Panel.ZIndex="0" FontSize="11" FontWeight="Bold" Foreground="White" Margin="265,146,0,0" Click="BtnConfigSVD_Click" HorizontalAlignment="Left" Width="130" />
+        <Button x:Name="BtnConfigureHS" Content="Configuration" Grid.Column="0" VerticalAlignment="Top" Height="18" Background="#FF959595" Panel.ZIndex="0" FontSize="11" FontWeight="Bold" Foreground="White" Margin="265,188,0,0" Click="BtnConfigHS_Click" HorizontalAlignment="Left" Width="130" />
     </Grid>
 </Window>

@@ -49,7 +49,7 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             return newImage;
         }
 
-        public Tuple<Bitmap, string> Decode(Bitmap encodedImage)
+        public Tuple<Bitmap, string> Decode(Bitmap encodedImage, AlgorithmConfiguration configuration)
         {
             throw new NotImplementedException();
         }

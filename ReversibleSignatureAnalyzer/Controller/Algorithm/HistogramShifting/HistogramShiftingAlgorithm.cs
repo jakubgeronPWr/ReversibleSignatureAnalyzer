@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ReversibleSignatureAnalyzer.Controller.Algorithm;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
@@ -163,7 +164,7 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
             return encodedImage;
         }
 
-        public Bitmap Encode(Bitmap inputImage, string payload)
+        public Bitmap Encode(Bitmap inputImage, string payload, AlgorithmConfiguration configuration)
         {
             Bitmap newImage = new Bitmap(inputImage);
             BitArray bitPayload = new BitArray(Encoding.ASCII.GetBytes(payload));
@@ -194,7 +195,7 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
             return newImage;
         }
 
-        public Tuple<Bitmap, string> Decode(Bitmap encodedImage)
+        public Tuple<Bitmap, string> Decode(Bitmap encodedImage, AlgorithmConfiguration configuration)
         {
             Bitmap originalImage;
             // HARDCODED HARDCODED HARDCODED, remember to change it

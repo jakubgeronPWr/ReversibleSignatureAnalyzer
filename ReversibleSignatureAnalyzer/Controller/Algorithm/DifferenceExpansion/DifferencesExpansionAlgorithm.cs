@@ -1,5 +1,7 @@
 
-﻿using ReversibleSignatureAnalyzer.Model.Algorithm;
+using ReversibleSignatureAnalyzer.Controller.Algorithm;
+using ReversibleSignatureAnalyzer.Controller.Algorithm.DifferenceExpansion;
+using ReversibleSignatureAnalyzer.Model.Algorithm;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -10,22 +12,62 @@ namespace ReversibleSignatureAnalyzer.Model
 {
     class DifferencesExpansionAlgorithm : IReversibleWatermarkingAlgorithm
     {
-        private int treshold;
-        private int iterations;
-        private Direction direction;
 
-        public DifferencesExpansionAlgorithm(int treshold, int iterations, Direction direction)
+        public Bitmap Encode(Bitmap inputImage, string payload, AlgorithmConfiguration configuration)
         {
-            this.treshold = treshold;
-            this.iterations = iterations;
-            this.direction = direction;
-        }
-        public Bitmap Encode(Bitmap inputImage, string payload)
-        {
+            DifferencesExpansionConfiguration config = (DifferencesExpansionConfiguration) configuration;
             Bitmap image = new Bitmap(inputImage);
-            int[,] averages = Calculate(image, CalculateAverage, direction);
-            int[,] differences = Calculate(image, CalculateDifference, direction);
-            int[,] localityMap = GetEmptyArrayAdjustedToImageSize(image, direction);
+            Direction currentEmbeddingDirection = config.EmbeddingDirection;
+            for (int i = 0; i < config.Iterations; i++)
+            {
+                List<string> payloadChunks = GetPayloadChunks(payload, config.EmbeddingChanels);
+                int chunkNumber = 0;
+                if (config.EmbeddingChanels.Contains(EmbeddingChanel.R))
+                {
+                    EncodePayloadIntoImage(image, payloadChunks[chunkNumber++], currentEmbeddingDirection, config.Threeshold, EmbeddingChanel.R);
+                }
+                if (config.EmbeddingChanels.Contains(EmbeddingChanel.G))
+                {
+                    EncodePayloadIntoImage(image, payloadChunks[chunkNumber++], currentEmbeddingDirection, config.Threeshold, EmbeddingChanel.G);
+                }
+                if (config.EmbeddingChanels.Contains(EmbeddingChanel.B))
+                {
+                    EncodePayloadIntoImage(image, payloadChunks[chunkNumber++], currentEmbeddingDirection, config.Threeshold, EmbeddingChanel.B);
+                }
+                currentEmbeddingDirection = GetChangedEmbeddingDirection(currentEmbeddingDirection);
+            }
+            return image;
+        }
+
+        private List<string> GetPayloadChunks(String payload, HashSet<EmbeddingChanel> embeddingChanels)
+        {
+            int numberOfChannels = embeddingChanels.Count;
+            if (numberOfChannels == 0)
+            {
+                throw new ArgumentException("At least one embedding channel have to be selected");
+            }
+            int chunkSizeForChannel = payload.Length / numberOfChannels;
+            List<string> payloadChunks = new List<string>(numberOfChannels);
+            int i = 0;
+            for (; i < numberOfChannels - 1; i++)
+            {
+                payloadChunks.Add(payload.Substring(i * chunkSizeForChannel, chunkSizeForChannel));
+            }
+            payloadChunks.Add(payload.Substring(i * chunkSizeForChannel));
+            return payloadChunks;
+        }
+
+        static IEnumerable<string> GetChunks(string str, int maxChunkSize)
+        {
+            for (int i = 0; i < str.Length; i += maxChunkSize)
+                yield return str.Substring(i, Math.Min(maxChunkSize, str.Length - i));
+        }
+
+        private void EncodePayloadIntoImage(Bitmap image, string payload, Direction embeddingDirection, int threeshold, EmbeddingChanel embeddingChanel)
+        {
+            int[,] averages = Calculate(image, CalculateAverage, embeddingDirection, embeddingChanel);
+            int[,] differences = Calculate(image, CalculateDifference, embeddingDirection, embeddingChanel);
+            int[,] localityMap = GetEmptyArrayAdjustedToImageSize(image, embeddingDirection);
             EncodingSetName[,] setsIds = new EncodingSetName[localityMap.GetLength(0), localityMap.GetLength(1)];
             int EZSize = 0;
             int EN1Size = 0;
@@ -36,13 +78,13 @@ namespace ReversibleSignatureAnalyzer.Model
                 {
                     if (IsExpandable(i, j, differences, averages))
                     {
-                        if(differences[i, j] == 0 || differences[i, j] == -1)
+                        if (differences[i, j] == 0 || differences[i, j] == -1)
                         {
                             localityMap[i, j] = 1;
                             EZSize++;
                             setsIds[i, j] = EncodingSetName.EZ;
                         }
-                        else if (Math.Abs(differences[i, j]) <= treshold)
+                        else if (Math.Abs(differences[i, j]) <= threeshold)
                         {
                             localityMap[i, j] = 1;
                             EN1Size++;
@@ -70,26 +112,25 @@ namespace ReversibleSignatureAnalyzer.Model
             }
 
             List<byte> localityVector = GetLeastSignificatBits(ConvertToList(localityMap));
-//            byte[] compressedLocalityVector = RLE<byte>.Encode(localityVector).ToArray();
 
             List<int> filteredEN2AndCN = EN2AndCN.Where(x => x != -2 && x != 1).ToList();
             List<byte> LSBs = GetLeastSignificatBits(filteredEN2AndCN);
- //           byte[] compressedLSBs = RLE<byte>.Encode(LSBs).ToArray();
 
             int embeddingCapacity = EZSize + EN1Size + EN2AndCN.Count;
 
             byte[] localityVectorSize = BitConverter.GetBytes((uint)localityVector.Count);
             byte[] LSBsSize = BitConverter.GetBytes((uint)LSBs.Count);
-            byte[] header = ConcatArrays(localityVectorSize, LSBsSize);
+            byte[] payloadSize = BitConverter.GetBytes(payload.Length);
+            byte[] header = ConcatArrays(localityVectorSize, LSBsSize, payloadSize);
             byte[] data = ConcatArrays(localityVector.ToArray(), LSBs.ToArray(), Encoding.ASCII.GetBytes(payload));
-            byte[] compressedData = RLE<byte>.Encode(new List<byte>(data)).ToArray(); 
+            byte[] compressedData = RLE<byte>.Encode(new List<byte>(data)).ToArray();
             byte[] embeddingStream = ConcatArrays(header, compressedData);
             bool[] bits = embeddingStream.SelectMany(GetBits).ToArray();
 
             int bitNumber = 0;
-            for(int p = 0; p < setsIds.GetLength(0) && bitNumber < bits.Length; p++)
+            for (int p = 0; p < setsIds.GetLength(0) && bitNumber < bits.Length; p++)
             {
-                for(int q = 0; q < setsIds.GetLength(1) && bitNumber < bits.Length; q++)
+                for (int q = 0; q < setsIds.GetLength(1) && bitNumber < bits.Length; q++)
                 {
                     if (setsIds[p, q] == EncodingSetName.EZ || setsIds[p, q] == EncodingSetName.EN1)
                     {
@@ -98,52 +139,85 @@ namespace ReversibleSignatureAnalyzer.Model
                     }
                     else if (setsIds[p, q] == EncodingSetName.EN2 || setsIds[p, q] == EncodingSetName.CN)
                     {
-                        differences[p, q] = 2 * (differences[p, q] / 2) + GetIntValue(bits[bitNumber]);
+                        differences[p, q] = 2 * DivideAndFloor(differences[p, q], 2) + GetIntValue(bits[bitNumber]);
                         bitNumber++;
                     }
                 }
             }
-
-            return GenerateEmbeddedImage(image, averages, differences, direction);
+            RecalculateImagePixels(image, averages, differences, embeddingDirection, embeddingChanel);
         }
 
-        private int [,] Calculate(Bitmap image, Func<int, int, int> operation, Direction direction)
+        private int[,] GetPixelValues(Bitmap image, EmbeddingChanel embeddingChannel)
+        {
+            int[,] values = new int[image.Height, image.Width];
+            for (int y = 0; y < image.Height; y++)
+            {
+                for (int x = 0; x < image.Width; x++)
+                {
+                    values[y, x] = getValueOfRgbChannel(image.GetPixel(x, y), embeddingChannel);
+                }
+            }
+            return values;
+        }
+
+        private byte getValueOfRgbChannel(Color pixel, EmbeddingChanel rgbChannel)
+        {
+            switch(rgbChannel)
+            {
+                case EmbeddingChanel.R:
+                    return pixel.R;
+                case EmbeddingChanel.G:
+                    return pixel.G;
+                case EmbeddingChanel.B:
+                    return pixel.B;
+                default:
+                    throw new Exception("Assertion error! Illegal RGB channel!");
+            }
+        }
+
+        private int DivideAndFloor(double number, double divisor)
+        {
+            return (int) Math.Floor(number / divisor);
+        }
+
+        private int [,] Calculate(Bitmap image, Func<int, int, int> operation, Direction direction, EmbeddingChanel embeddingChanel)
         {
             if (direction == Direction.Horizontal)
             {
-                return CalculateHorizontally(image, operation);
+                return CalculateHorizontally(image, operation, embeddingChanel);
             }
-            return CalculateVertically(image, operation);
+            return CalculateVertically(image, operation, embeddingChanel);
         }
 
-        private int [,] CalculateHorizontally(Bitmap image, Func<int, int, int> operation)
+        private int [,] CalculateHorizontally(Bitmap image, Func<int, int, int> operation, EmbeddingChanel embeddingChannel)
         {
             int[,] result = new int[image.Height, image.Width / 2];
             for (int y = 0; y < image.Height; y++)
             {
                 for (int x = 0; x < image.Width / 2; x++)
                 {
-                    result[y, x] = operation(image.GetPixel(2 * x, y).R, image.GetPixel(2 * x + 1, y).R);
+                    result[y, x] = operation(getValueOfRgbChannel(image.GetPixel(2 * x, y), embeddingChannel), getValueOfRgbChannel(image.GetPixel(2 * x + 1, y), embeddingChannel));
                 }
             }
             return result;
         }
 
-        private int[,] CalculateVertically(Bitmap image, Func<int, int, int> operation)
+        private int[,] CalculateVertically(Bitmap image, Func<int, int, int> operation, EmbeddingChanel embeddingChanel)
         {
             int[,] result = new int[image.Height / 2, image.Width];
             for (int y = 0; y < image.Height / 2; y++)
             {
                 for (int x = 0; x < image.Width; x++)
                 {
-                    result[y, x] = operation(image.GetPixel(x, 2 * y).R, image.GetPixel(x, 2 * y + 1).R);
+                    result[y, x] = operation(getValueOfRgbChannel(image.GetPixel(x, 2 * y), embeddingChanel), getValueOfRgbChannel(image.GetPixel(x, 2 * y + 1), embeddingChanel));
                 }
             }
             return result;
         }
+
         private int CalculateAverage(int x, int y)
         {
-            return (x + y) / 2;
+            return (int) Math.Floor((((double) x) + y) / 2);
         }
 
         private int CalculateDifference(int x, int y)
@@ -168,8 +242,8 @@ namespace ReversibleSignatureAnalyzer.Model
 
         private bool IsChangeable(int i, int j, int[,] differences, int[,] averages)
         {
-            return Math.Abs(2 * (differences[i, j] / 2) + 0) <= Math.Min(2 * (255 - averages[i, j]), 2 * averages[i, j] + 1) &&
-                Math.Abs(2 * (differences[i, j] / 2) + 1) <= Math.Min(2 * (255 - averages[i, j]), 2 * averages[i, j] + 1);
+            return Math.Abs(2 * DivideAndFloor(differences[i, j], 2) + 0) <= Math.Min(2 * (255 - averages[i, j]), 2 * averages[i, j] + 1) &&
+                Math.Abs(2 * DivideAndFloor(differences[i, j], 2) + 1) <= Math.Min(2 * (255 - averages[i, j]), 2 * averages[i, j] + 1);
         }
 
         static List<int> ConvertToList(int[,] array)
@@ -183,14 +257,14 @@ namespace ReversibleSignatureAnalyzer.Model
         private List<byte> GetLeastSignificatBits(List<int> values)
         {
             List<byte> leastSignificantBits = new List<byte>();
-            int count = values.Count / 8;
-            int reminder = values.Count % 8;
-            int i = 0;
+            int count = values.Count;
+            int i;
+            int pos;
             int currentValue = 0;
-            for(; i < count; i++)
+            for(i = 0; i < count; i+=pos)
             {
                 currentValue = 0;
-                for(int pos = 0; pos < 8 && (i + pos) < values.Count; pos++)
+                for(pos = 0; pos < 8 && (i + pos) < count; pos++)
                 {
                     currentValue += (values[i + pos] & 1) * (int)(Math.Pow(2, 7 - pos));
                 }
@@ -225,61 +299,101 @@ namespace ReversibleSignatureAnalyzer.Model
             return boolean ? 1 : 0;
         }
 
-        private Bitmap GenerateEmbeddedImage(Bitmap image, int[,] averages, int[,] newDifferences, Direction direction)
-        {
-            Bitmap newImage = new Bitmap(image);
-            return Embed(newImage, averages, newDifferences, direction);
-        }
-
-        private Bitmap Embed(Bitmap image, int[,] averages, int[,] newDifferences, Direction direction)
+        private void RecalculateImagePixels(Bitmap image, int[,] averages, int[,] newDifferences, Direction direction, EmbeddingChanel embeddingChanel)
         {
             if (direction == Direction.Horizontal)
             {
-                return EmbedHorizontally(image, averages, newDifferences);
+                RecalculatePixelsHorizontally(image, averages, newDifferences, embeddingChanel);
+            } else
+            {
+                RecalculatePixelsVertically(image, averages, newDifferences, embeddingChanel);
             }
-            return EmbedVertically(image, averages, newDifferences);
         }
 
-        private Bitmap EmbedHorizontally(Bitmap image, int[,] averages, int[,] newDifferences)
+        private void RecalculatePixelsHorizontally(Bitmap image, int[,] averages, int[,] newDifferences, EmbeddingChanel embeddingChanel)
         {
             for (int y = 0; y < image.Height; y++)
             {
                 for (int x = 0; x < image.Width / 2; x++)
                 {
-                    Color currentXColor = image.GetPixel(2 * x, y);
-                    int XR = averages[y, x] + (newDifferences[y, x] + 1) / 2;
-                    image.SetPixel(2 * x, y, Color.FromArgb(currentXColor.A, XR, currentXColor.G, currentXColor.B));
-                    int YR = averages[y, x] - newDifferences[y, x] / 2;
-                    Color currentYColor = image.GetPixel(2 * x + 1, y);
-                    image.SetPixel(2 * x + 1, y, Color.FromArgb(currentYColor.A, YR, currentYColor.G, currentYColor.B));
+                    Color currentPixelX = image.GetPixel(2 * x, y);
+                    int newX = averages[y, x] + DivideAndFloor(newDifferences[y, x] + 1, 2);
+                    image.SetPixel(2 * x, y, getPixelWithNewValueForSpecifiedRgbChannel(currentPixelX, newX, embeddingChanel));
+                    int newY = averages[y, x] - DivideAndFloor(newDifferences[y, x], 2);
+                    Color currentPixelY = image.GetPixel(2 * x + 1, y);
+                    image.SetPixel(2 * x + 1, y, getPixelWithNewValueForSpecifiedRgbChannel(currentPixelY, newY, embeddingChanel));
                 }
             }
-            return image;
         }
 
-        private Bitmap EmbedVertically(Bitmap image, int[,] averages, int[,] newDifferences)
+        private Color getPixelWithNewValueForSpecifiedRgbChannel(Color oldPixel, int newValueForChannel, EmbeddingChanel embeddingChanel)
+        {
+            switch(embeddingChanel)
+            {
+                case EmbeddingChanel.R:
+                    return Color.FromArgb(oldPixel.A, newValueForChannel, oldPixel.G, oldPixel.B);
+                case EmbeddingChanel.G:
+                    return Color.FromArgb(oldPixel.A, oldPixel.R, newValueForChannel, oldPixel.B);
+                case EmbeddingChanel.B:
+                    return Color.FromArgb(oldPixel.A, oldPixel.R, oldPixel.G, newValueForChannel);
+                default:
+                    throw new Exception("Assertion error! Illegal RGB channel!");
+            }
+        }
+
+        private void RecalculatePixelsVertically(Bitmap image, int[,] averages, int[,] newDifferences, EmbeddingChanel embeddingChannel)
         {
             for (int y = 0; y < image.Height / 2; y++)
             {
                 for (int x = 0; x < image.Width; x++)
                 {
-                    Color currentXColor = image.GetPixel(x, 2 * y);
-                    int XR = averages[y, x] + (newDifferences[y, x] + 1) / 2;
-                    image.SetPixel(x, 2 * y, Color.FromArgb(currentXColor.A, XR, currentXColor.G, currentXColor.B));
-                    int YR = averages[y, x] - newDifferences[y, x] / 2;
-                    Color currentYColor = image.GetPixel(x, 2 * y + 1);
-                    image.SetPixel(x, 2 * y + 1, Color.FromArgb(currentYColor.A, YR, currentYColor.G, currentYColor.B));
+                    Color currentPixelX = image.GetPixel(x, 2 * y);
+                    int newX = averages[y, x] + DivideAndFloor(newDifferences[y, x] + 1, 2);
+                    image.SetPixel(x, 2 * y, getPixelWithNewValueForSpecifiedRgbChannel(currentPixelX, newX, embeddingChannel));
+                    int newY = averages[y, x] - DivideAndFloor(newDifferences[y, x], 2);
+                    Color currentPixelY = image.GetPixel(x, 2 * y + 1);
+                    image.SetPixel(x, 2 * y + 1, getPixelWithNewValueForSpecifiedRgbChannel(currentPixelY, newY, embeddingChannel));
                 }
             }
-            return image;
         }
 
-        public Tuple<Bitmap, string> Decode(Bitmap encodedImage)
+        private Direction GetChangedEmbeddingDirection(Direction currentDirection)
         {
+            return currentDirection == Direction.Horizontal ? Direction.Vertical : Direction.Horizontal;
+        }
+
+        public Tuple<Bitmap, string> Decode(Bitmap encodedImage, AlgorithmConfiguration configuration)
+        {
+            DifferencesExpansionConfiguration config = (DifferencesExpansionConfiguration) configuration;
             Bitmap image = new Bitmap(encodedImage);
-            int[,] averages = Calculate(image, CalculateAverage, direction);
-            int[,] differences = Calculate(image, CalculateDifference, direction);
-            int[,] localityMap = GetEmptyArrayAdjustedToImageSize(image, direction);
+            Direction currentEmbeddingDirection = config.EmbeddingDirection;
+            string payload = "";
+            for (int i = 0; i < configuration.Iterations; i++)
+            {
+                List<string> payloadChunks = new List<string>();
+                if (config.EmbeddingChanels.Contains(EmbeddingChanel.R))
+                {
+                    payloadChunks.Add(DecodeImage(image, currentEmbeddingDirection, EmbeddingChanel.R));
+                }
+                if (config.EmbeddingChanels.Contains(EmbeddingChanel.G))
+                {
+                    payloadChunks.Add(DecodeImage(image, currentEmbeddingDirection, EmbeddingChanel.G));
+                }
+                if (config.EmbeddingChanels.Contains(EmbeddingChanel.B))
+                {
+                    payloadChunks.Add(DecodeImage(image, currentEmbeddingDirection, EmbeddingChanel.B));
+                }
+                currentEmbeddingDirection = GetChangedEmbeddingDirection(currentEmbeddingDirection);
+                payload = String.Join("", payloadChunks);
+            }
+            return new Tuple<Bitmap, string>(image, payload);
+        }
+
+        private string DecodeImage(Bitmap image, Direction embeddingDirection, EmbeddingChanel embeddingChannel)
+        {
+            int[,] averages = Calculate(image, CalculateAverage, embeddingDirection, embeddingChannel);
+            int[,] differences = Calculate(image, CalculateDifference, embeddingDirection, embeddingChannel);
+            int[,] localityMap = GetEmptyArrayAdjustedToImageSize(image, embeddingDirection);
             DecodingSetName[,] setsIds = new DecodingSetName[localityMap.GetLength(0), localityMap.GetLength(1)];
             List<int> changeableDifferences = new List<int>();
 
@@ -301,26 +415,28 @@ namespace ReversibleSignatureAnalyzer.Model
             List<byte> LSBs = GetLeastSignificatBits(changeableDifferences);
             byte[] localityVectorSizeBytes = LSBs.GetRange(0, 4).ToArray();
             byte[] originalLSBsSizeBytes = LSBs.GetRange(4, 4).ToArray();
-            byte[] compressedData = LSBs.GetRange(8, LSBs.Count - 8).ToArray();
+            byte[] payloadSizeBytes = LSBs.GetRange(8, 4).ToArray();
+            byte[] compressedData = LSBs.GetRange(12, LSBs.Count - 12).ToArray();
             int localityVectorSize = BitConverter.ToInt32(localityVectorSizeBytes, 0);
             int originalLSBsSize = BitConverter.ToInt32(originalLSBsSizeBytes, 0);
+            int payloadSize = BitConverter.ToInt32(payloadSizeBytes, 0);
             byte[] originalData = RLE<byte>.Decode(compressedData).ToArray();
             byte[] localityVector = new List<byte>(originalData).GetRange(0, localityVectorSize).ToArray();
             byte[] originalLSBsVector = new List<byte>(originalData).GetRange(localityVectorSize, originalLSBsSize).ToArray();
-            byte[] payload = new List<byte>(originalData).GetRange(localityVectorSize + originalLSBsSize, originalData.Length - (localityVectorSize + originalLSBsSize)).ToArray();
+            byte[] payload = new List<byte>(originalData).GetRange(localityVectorSize + originalLSBsSize, payloadSize).ToArray();
             bool[] localityVectorBits = new List<byte>(localityVector).SelectMany(GetBits).ToArray();
             bool[] originalLSBsVectorBits = new List<byte>(originalLSBsVector).SelectMany(GetBits).ToArray();
             bool[] payloadBits = new List<byte>(payload).SelectMany(GetBits).ToArray();
             int bitNumber = 0;
-            for(int i = 0; i < differences.GetLength(0); i++)
+            for (int i = 0; i < differences.GetLength(0); i++)
             {
-                for(int j = 0; j < differences.GetLength(1); j++)
+                for (int j = 0; j < differences.GetLength(1); j++)
                 {
                     if (setsIds[i, j] == DecodingSetName.CH)
                     {
-                        if(localityVectorBits[i * differences.GetLength(0) + j])
+                        if (localityVectorBits[i * differences.GetLength(1) + j])
                         {
-                            differences[i, j] = differences[i, j] / 2;
+                            differences[i, j] = DivideAndFloor(differences[i, j], 2);
                         }
                         else
                         {
@@ -334,21 +450,20 @@ namespace ReversibleSignatureAnalyzer.Model
                             }
                             else
                             {
-                                differences[i, j] = 2 * (differences[i, j] / 2) + GetIntValue(originalLSBsVectorBits[bitNumber]);
+                                differences[i, j] = 2 * DivideAndFloor(differences[i, j], 2) + GetIntValue(originalLSBsVectorBits[bitNumber]);
                                 bitNumber++;
                             }
                         }
                     }
                 }
             }
-            Bitmap originalImage = GenerateEmbeddedImage(image, averages, differences, direction);
-            string payloadString = Encoding.ASCII.GetString(payload);
-            return new Tuple<Bitmap, string>(originalImage, payloadString);
+            RecalculateImagePixels(image, averages, differences, embeddingDirection, embeddingChannel);
+            return Encoding.ASCII.GetString(payload);
         }
 
     }
 
-    enum Direction
+    public enum Direction
     {
         Horizontal,
         Vertical
