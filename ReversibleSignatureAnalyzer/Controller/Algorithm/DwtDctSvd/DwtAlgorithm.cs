@@ -159,15 +159,15 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             return value;
         }
 
-        public void ApplyHaarTransform(bool Forward, bool Safe, string sIterations)
+        public void ApplyHaarTransform(bool Forward, bool Safe, int iterations)
         {
             Bitmap bmp = Forward ? new Bitmap(OriginalImage) : new Bitmap(TransformedImage);
 
-            int Iterations = 0;
-            int.TryParse(sIterations, out Iterations);
+            //int Iterations = 0;
+            //int.TryParse(sIterations, out Iterations);
 
             int maxScale = (int)(Math.Log(bmp.Width < bmp.Height ? bmp.Width : bmp.Height) / Math.Log(2));
-            if (Iterations < 1 || Iterations > maxScale)
+            if (iterations < 1 || iterations > maxScale)
             {
                 MessageBox.Show("Iteration must be Integer from 1 to " + maxScale);
                 return;
@@ -217,15 +217,15 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
 
             if (Forward)
             {
-                DwtF(Red, Iterations);
-                DwtF(Green, Iterations);
-                DwtF(Blue, Iterations);
+                DwtF(Red, iterations);
+                DwtF(Green, iterations);
+                DwtF(Blue, iterations);
             }
             else
             {
-                IDwtF(Red, Iterations);
-                IDwtF(Green, Iterations);
-                IDwtF(Blue, Iterations);
+                IDwtF(Red, iterations);
+                IDwtF(Green, iterations);
+                IDwtF(Blue, iterations);
             }
 
             if (Safe)

@@ -74,14 +74,14 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
 
         public Bitmap MatricesToBitmap(double[][,] matrices, bool offset = true)
         {
-            double[,] first = matrices[0];
+            double[,] first = matrices[2];
             int width = first.GetLength(0);
             int height = first.GetLength(1);
 
             Bitmap bitmap = new Bitmap(width, height);
-            for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
             {
-                for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
                 {
                     //double alpha = matrices[0][x, y];
                     double r = matrices[0][x, y];
