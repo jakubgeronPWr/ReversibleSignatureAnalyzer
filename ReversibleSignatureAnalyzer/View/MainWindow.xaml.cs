@@ -14,6 +14,7 @@ using ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting;
 using ReversibleSignatureAnalyzer.Controller.Algorithm.DifferenceExpansion;
 using ReversibleSignatureAnalyzer.Controller.Algorithm;
 using System.Collections.Generic;
+using ReversibleSignatureAnalyzer.Controller.Algorithm.HistogramShifting;
 
 namespace ReversibleSignatureAnalyzer.View
 {
@@ -251,7 +252,7 @@ namespace ReversibleSignatureAnalyzer.View
 
         private void BtnConfigHS_Click(object sender, RoutedEventArgs e)
         {
-
+           
         }
 
     }
