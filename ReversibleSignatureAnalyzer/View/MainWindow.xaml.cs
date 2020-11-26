@@ -252,7 +252,35 @@ namespace ReversibleSignatureAnalyzer.View
 
         private void BtnConfigHS_Click(object sender, RoutedEventArgs e)
         {
-           
+            HashSet<EmbeddingChanel> set = new HashSet<EmbeddingChanel>();
+            set.Add(EmbeddingChanel.R);
+            HistogramShiftingConfiguration config = new HistogramShiftingConfiguration(1, set);
+            var dialogBox = new ConfigurationDialogBox.HistogramShiftingConfiguraitonDialogBox(
+                config.EmbeddingChanels)
+            {
+                Owner = this,
+            };
+            dialogBox.ShowDialog();
+            if (dialogBox.DialogResult == true)
+            {
+                if (dialogBox.cbR.IsChecked == true)
+                {
+                    HashSet<EmbeddingChanel> embeddingChanels = new HashSet<EmbeddingChanel>();
+                    if (dialogBox.cbR.IsChecked == true)
+                    {
+                        embeddingChanels.Add(EmbeddingChanel.R);
+                    }
+                    if (dialogBox.cbG.IsChecked == true)
+                    {
+                        embeddingChanels.Add(EmbeddingChanel.G);
+                    }
+                    if (dialogBox.cbB.IsChecked == true)
+                    {
+                        embeddingChanels.Add(EmbeddingChanel.B);
+                    }
+                    currentDeConfiguration = new HistogramShiftingConfiguration(1, embeddingChanels);
+                }
+            }
         }
 
     }
