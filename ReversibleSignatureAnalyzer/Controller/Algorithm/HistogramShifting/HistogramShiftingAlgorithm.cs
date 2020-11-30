@@ -67,7 +67,7 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
                 int a = Array.IndexOf(histogram[i], histogram[i].Max());
                 int b = 0;
                 int minVal = int.MaxValue;
-                for (int x = 255; x > a; x--)
+                for (int x = 254; x > a; x--)
                 {
                     if (histogram[i][x] < minVal)
                     {
