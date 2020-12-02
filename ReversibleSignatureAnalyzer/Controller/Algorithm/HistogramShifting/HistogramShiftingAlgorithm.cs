@@ -20,15 +20,11 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
             public byte r { get; set; }
             public byte g { get; set; }
             public byte b { get; set; }
-
-            // public Color retrivalPixel { get; set; }
             public int[][] significantPoints { get; set; }
-            // public List<(int, int, EmbeddingChanel)> overhead { get; set; }
-            // public HashSet<EmbeddingChanel> embeddingChannels { get; set; }
             public byte embeddingChannels { get; set; }
 
             public RetrivalData() { }
-            public RetrivalData(int[][] significantPoints, /*List<(int, int, EmbeddingChanel)> overhead,*/ byte embeddingChannels, byte a, byte r, byte g, byte b)
+            public RetrivalData(int[][] significantPoints, byte embeddingChannels, byte a, byte r, byte g, byte b)
             {
                 this.significantPoints = significantPoints;
                 this.embeddingChannels = embeddingChannels;
@@ -40,7 +36,7 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
 
         }
 
-        static private int[][] GetHistogram(Bitmap inputImage)
+        private int[][] GetHistogram(Bitmap inputImage)
         {
             int[][] histogram = new int[3][];
             for (int x = 0; x < histogram.Length; x++)
@@ -58,7 +54,7 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
             return histogram;
         }
 
-        static private int[][] FindSignificantPoints(int[][] histogram)
+        private int[][] FindSignificantPoints(int[][] histogram)
         {
             int[][] significantPoints = new int[histogram.Length][];
             for (int i = 0; i < histogram.Length; i++)
@@ -81,7 +77,7 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
             return significantPoints;
         }
 
-        static private (int, int, EmbeddingChanel)[] RecodeMinPixels(Bitmap image, int[][] significantPoints, EmbeddingChanel channel)
+        private (int, int, EmbeddingChanel)[] RecodeMinPixels(Bitmap image, int[][] significantPoints, EmbeddingChanel channel)
         {
             int b = significantPoints[(int)channel][1];
             // If b is 0 already ignore this step
@@ -115,7 +111,7 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
             return positions.ToArray();
         }
 
-        static private Bitmap ShiftImageAndEncode(Bitmap image, int[][] significantPoints, EmbeddingChanel channel, BitArray bitPayload)
+        private Bitmap ShiftImageAndEncode(Bitmap image, int[][] significantPoints, EmbeddingChanel channel, BitArray bitPayload)
         {
             int payloadPos = 0;
             for (int x = 0; x < image.Width; x++)
@@ -173,7 +169,7 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
             return image;
         }
 
-        static private List<BitArray> getPayloadsForEachChannel(BitArray payload, HashSet<EmbeddingChanel> channels, int[][] significantPoints, int[][] histogram)
+        private List<BitArray> getPayloadsForEachChannel(BitArray payload, HashSet<EmbeddingChanel> channels, int[][] significantPoints, int[][] histogram)
         {
             int startIndex = 0;
             int remainingData = payload.Length;
@@ -188,9 +184,11 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
                     int a = significantPoints[(int)channel][0];
                     int b = significantPoints[(int)channel][1];
                     int capacity = histogram[(int)channel][a] - histogram[(int)channel][b];
+                    capacity = capacity - capacity % 8; // remove bits that cant be added up into a full byte
                     bool[] payloadChannel = new bool[capacity];
                     if (capacity > remainingData)
                     {
+                        payloadChannel = new bool[remainingData];
                         Array.Copy(payloadArray, startIndex, payloadChannel, 0, remainingData);
                     }
                     else
@@ -207,15 +205,14 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
                 }
             }
 
-            //output.Add(payload);
             return output;
         }
 
         static private HashSet<EmbeddingChanel> retriveChannels(Color pix)
         {
-            Boolean r = false;
-            Boolean g = false;
-            Boolean b = false;
+            bool r = false;
+            bool g = false;
+            bool b = false;
             int enc = pix.A;
             HashSet<EmbeddingChanel> embeddingChannels = new HashSet<EmbeddingChanel>();
             if (enc >= 4)
@@ -244,9 +241,9 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
 
         static private HashSet<EmbeddingChanel> retriveChannelsByte(byte enc)
         {
-            Boolean r = false;
-            Boolean g = false;
-            Boolean b = false;
+            bool r = false;
+            bool g = false;
+            bool b = false;
             HashSet<EmbeddingChanel> embeddingChannels = new HashSet<EmbeddingChanel>();
             if (enc >= 4)
             {
@@ -323,7 +320,7 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
             return encoding.GetString(strArr);
         }
 
-        static private byte[] gatherSingleChannelPayload(Bitmap encodedImage, EmbeddingChanel channel, int a)
+        static private List<bool> gatherSingleChannelPayload(Bitmap encodedImage, EmbeddingChanel channel, int a)
         {
             List<bool> payload = new List<bool>();
 
@@ -376,18 +373,17 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
                     }
                 }
             }
-            BitArray arr = new BitArray(payload.ToArray());
-            byte[] bytes = new byte[arr.Length];
-            arr.CopyTo(bytes, 0);
-            return bytes;
+            int noBitsToRemove = payload.Count % 8;
+            for (int i = 0; i < noBitsToRemove; i++)
+            {
+                payload.RemoveAt(payload.Count - 1); // remove bits that cant be added up into a full byte
+            }
+            return payload;
         }
 
         static private BitArray gatherPayload(Bitmap encodedImage, HashSet<EmbeddingChanel> embeddingChannels, Color retrivalPixel)
         {
-            List<byte[]> data = new List<byte[]>();
-            int size = 0;
-            int pointer = 0;
-            byte[] final;
+            List<List<bool>> data = new List<List<bool>>();
             foreach (var channel in embeddingChannels)
             {
                 if (channel == EmbeddingChanel.R)
@@ -403,17 +399,12 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
                     data.Add(gatherSingleChannelPayload(encodedImage, channel, retrivalPixel.B));
                 }
             }
-            foreach (var arr in data)
+            List<bool> fullData = new List<bool>();
+            foreach (var list in data)
             {
-                size += arr.Length;
+                fullData.AddRange(list);
             }
-            final = new byte[size];
-            foreach (var arr in data)
-            {
-                Array.Copy(arr, 0, final, pointer, arr.Length);
-                pointer += arr.Length;
-            }
-            return new BitArray(final);
+            return new BitArray(fullData.ToArray());
         }
 
         static private Bitmap reshiftImage(Bitmap encodedImage, RetrivalData retrivalData)
@@ -457,31 +448,6 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
                     }
                 }
             }
-            /*foreach (var shiftPixel in retrivalData.overhead)
-            {
-                int b = retrivalData.significantPoints[(int)shiftPixel.Item3][1]; // value b for a given channel
-                switch (shiftPixel.Item3)
-                {
-                    case EmbeddingChanel.R:
-                        {
-                            var currentPixel = encodedImage.GetPixel(shiftPixel.Item1, shiftPixel.Item2);
-                            encodedImage.SetPixel(shiftPixel.Item1, shiftPixel.Item2, Color.FromArgb(currentPixel.A, b, currentPixel.G, currentPixel.B));
-                            break;
-                        }
-                    case EmbeddingChanel.G:
-                        {
-                            var currentPixel = encodedImage.GetPixel(shiftPixel.Item1, shiftPixel.Item2);
-                            encodedImage.SetPixel(shiftPixel.Item1, shiftPixel.Item2, Color.FromArgb(currentPixel.A, currentPixel.R, b, currentPixel.B));
-                            break;
-                        }
-                    case EmbeddingChanel.B:
-                        {
-                            var currentPixel = encodedImage.GetPixel(shiftPixel.Item1, shiftPixel.Item2);
-                            encodedImage.SetPixel(shiftPixel.Item1, shiftPixel.Item2, Color.FromArgb(currentPixel.A, currentPixel.R, currentPixel.G, b));
-                            break;
-                        }
-                }
-            }*/
             return encodedImage;
         }
 
