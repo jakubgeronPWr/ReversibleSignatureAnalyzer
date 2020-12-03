@@ -35,7 +35,10 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
 
             foreach (var value in payload)
             {
-                sb.Append(Convert.ToChar(value));
+                double oneElemet = value;
+                if (value < 0)
+                    oneElemet = 0;
+                sb.Append(Convert.ToChar(Convert.ToInt32(oneElemet)));
 
             }
 
@@ -49,7 +52,7 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             {
                 for (int j = 0; j < result2DArray.GetLength(1); j++)
                 {
-                    result2DArray[i, j] = 0;
+                    result2DArray[j, i] = 0;
                 }
             }
 
@@ -71,10 +74,13 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
                 {
                     Debug.WriteLine("");
                     Debug.Write("[");
-                    for (int i = 0; i < payloadRowLength; i++)
+                    for (int i = 0; i < payloadRowLength ; i++)
                     {
-                        result2DArray[k, i] = payload[i + (k * width)];
-                        Debug.Write($"{result2DArray[k, i]}, ");
+                        if (payload.Length > i + (k * width))
+                        {
+                            result2DArray[i, k] = payload[i + (k * width)];
+                        }
+                        Debug.Write($"{result2DArray[i, k]}, ");
                     }
                     Debug.Write("]");
                 }
@@ -99,11 +105,11 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
                 }
             }
 
-            Debug.WriteLine("Payload extraction 1D array: ");
-            foreach (var value in resultArray)
-            {
-                Debug.Write(value);
-            }
+            //Debug.WriteLine("Payload extraction 1D array: ");
+            //foreach (var value in resultArray)
+            //{
+            //    Debug.Write(value);
+            //}
 
             return resultArray;
         }

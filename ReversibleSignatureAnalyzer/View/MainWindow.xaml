@@ -58,5 +58,7 @@
         <Button x:Name="BtnConfigureDE" Content="Configuration" Grid.Column="0" VerticalAlignment="Top" Height="18" Background="#FF959595" Panel.ZIndex="0" FontSize="11" FontWeight="Bold" Foreground="White" Margin="265,105,0,0" Click="BtnConfigDE_Click" HorizontalAlignment="Left" Width="130" />
         <Button x:Name="BtnConfigureSVD" Content="Configuration" Grid.Column="0" VerticalAlignment="Top" Height="18" Background="#FF959595" Panel.ZIndex="0" FontSize="11" FontWeight="Bold" Foreground="White" Margin="265,146,0,0" Click="BtnConfigSVD_Click" HorizontalAlignment="Left" Width="130" />
         <Button x:Name="BtnConfigureHS" Content="Configuration" Grid.Column="0" VerticalAlignment="Top" Height="18" Background="#FF959595" Panel.ZIndex="0" FontSize="11" FontWeight="Bold" Foreground="White" Margin="265,188,0,0" Click="BtnConfigHS_Click" HorizontalAlignment="Left" Width="130" />
+        <Button x:Name="BtnLoadOriginImage" Content="ORG" Grid.Column="0" Grid.Row="0" VerticalAlignment="Top" Height="18" Background="#FF959595" Panel.ZIndex="0" FontSize="11" FontWeight="Bold" Foreground="White" Margin="215,146,0,0" Click="BtnLoadOriginImage_Click" HorizontalAlignment="Left" Width="36" />
+
     </Grid>
 </Window>
