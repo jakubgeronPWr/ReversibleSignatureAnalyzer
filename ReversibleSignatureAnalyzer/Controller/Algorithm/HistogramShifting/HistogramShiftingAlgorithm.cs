@@ -462,6 +462,98 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
             return obj;
         }
 
+        static private Color testPixelGet(byte val, EmbeddingChanel channel)
+        {
+            if (channel == EmbeddingChanel.R)
+                return Color.FromArgb(1, val, 0, 0);
+            else if (channel == EmbeddingChanel.G)
+                return Color.FromArgb(2, 0, val, 0);
+            else if (channel == EmbeddingChanel.B)
+                return Color.FromArgb(4, 0, 0, val);
+            return Color.FromArgb(0, 0, 0, 0);
+        }
+
+        private Tuple<Bitmap, string> TryForPayloadChannel(Bitmap encodedImage, EmbeddingChanel channel)
+        {
+            Bitmap originalImage = null;
+            string payload = "";
+
+            // read retrival pixel
+            Color retrivalPixel;
+
+            for (int j = 254; j > 0; j--)
+            {
+                try
+                {
+                    retrivalPixel = testPixelGet((byte)j, channel);
+                    HashSet<EmbeddingChanel> embeddingChannels = retriveChannels(retrivalPixel);
+                    BitArray dataBitArray = gatherPayload(encodedImage, embeddingChannels, retrivalPixel);
+                    byte[] fullData = new byte[dataBitArray.Length];
+                    dataBitArray.CopyTo(fullData, 0);
+                    int retrivalDataLength = BitConverter.ToInt32(fullData, 0);
+                    byte[] retrivalDataBytes = new byte[retrivalDataLength];
+                    for (int i = 0; i < retrivalDataLength; i++)
+                    {
+                        retrivalDataBytes[i] = fullData[i + 4];
+                    }
+                    RetrivalData retrival = (RetrivalData)byteArrayToObject(retrivalDataBytes);
+
+                    // If correct channel was found, aquire complete data
+
+                    retrivalPixel = Color.FromArgb(retrival.embeddingChannels, retrival.significantPoints[0][0],
+                                                    retrival.significantPoints[1][0], retrival.significantPoints[2][0]);
+                    embeddingChannels = retriveChannels(retrivalPixel);
+                    dataBitArray = gatherPayload(encodedImage, embeddingChannels, retrivalPixel);
+                    fullData = new byte[dataBitArray.Length];
+                    dataBitArray.CopyTo(fullData, 0);
+
+                    // separate payload
+                    byte[] payloadBytes = new byte[fullData.Length - 4 - retrivalDataLength];
+                    for (int i = 0; i < retrivalDataLength; i++)
+                    {
+                        payloadBytes[i] = fullData[i + 4 + retrivalDataLength];
+                    }
+                    payload = BitArrayToString(new BitArray(payloadBytes)).Replace("\0", string.Empty);
+
+                    // set retrival pixel
+                    originalImage = encodedImage;
+                    originalImage.SetPixel(0, 0, Color.FromArgb(retrival.a, retrival.r, retrival.g, retrival.b));
+
+                    // retrive original image
+                    originalImage = reshiftImage(encodedImage, retrival);
+                    return new Tuple<Bitmap, string>(originalImage, payload);
+                }
+                catch
+                { }
+            }
+            return new Tuple<Bitmap, string>(originalImage, payload);
+        }
+
+        public Tuple<Bitmap, string> TryForPayload(Bitmap encodedImage)
+        {
+            Bitmap originalImage = null;
+            string payload = "";
+
+            var red = TryForPayloadChannel(encodedImage, EmbeddingChanel.R);
+            if (red.Item1 != null)
+            {
+                return red;
+            }
+            var green = TryForPayloadChannel(encodedImage, EmbeddingChanel.G);
+            if (green.Item1 != null)
+            {
+                return green;
+            }
+            var blue = TryForPayloadChannel(encodedImage, EmbeddingChanel.B);
+            if (blue.Item1 != null)
+            {
+                return blue;
+            }
+
+            return new Tuple<Bitmap, string>(originalImage, payload);
+        }
+
+
         public Bitmap Encode(Bitmap inputImage, string payload, AlgorithmConfiguration algorithmConfiguration)
         {
             Bitmap newImage = new Bitmap(inputImage);
