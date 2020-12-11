@@ -54,11 +54,11 @@
             <RowDefinition />
         </Grid.RowDefinitions>
 
-        <Label Grid.Column="0" Grid.Row="0">Number of iterations:</Label>
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,0" Height="Auto" Width="Auto" Grid.Column="1" Grid.Row="0">
-            <TextBox x:Name="tbIterations" Height="Auto" MinWidth="107" Width="Auto" VerticalAlignment="Center" x:FieldModifier="private" Margin="0,0,0,10" Text="1" TextChanged="txtNum_TextChanged" />
-            <Button x:Name="cmdUp" Height="Auto" VerticalAlignment="Center" x:FieldModifier="private" Margin="0,0,0,10" Content="˄" MinWidth="20" Width="Auto" Click="cmdUp_Click" />
-            <Button x:Name="cmdDown" Height="Auto" VerticalAlignment="Center" x:FieldModifier="private" Margin="0,0,0,10"  Content="˅" MinWidth="20" Width="Auto" Click="cmdDown_Click" />
+        <Label Grid.Column="0" Grid.Row="0" Visibility="Hidden">Number of iterations:</Label>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,0" Height="Auto" Width="Auto" Grid.Column="1" Grid.Row="0" Visibility="Hidden">
+            <TextBox x:Name="tbIterations" Height="Auto" MinWidth="107" Width="Auto" VerticalAlignment="Center" x:FieldModifier="private" Margin="0,0,0,10" Text="1" TextChanged="txtNum_TextChanged" Visibility="Visible" />
+            <Button x:Name="cmdUp" Height="Auto" VerticalAlignment="Center" x:FieldModifier="private" Margin="0,0,0,10" Content="˄" MinWidth="20" Width="Auto" Click="cmdUp_Click" Visibility="Visible" />
+            <Button x:Name="cmdDown" Height="Auto" VerticalAlignment="Center" x:FieldModifier="private" Margin="0,0,0,10"  Content="˅" MinWidth="20" Width="Auto" Click="cmdDown_Click" Visibility="Visible" />
         </StackPanel>
 
         <Label Grid.Column="0" Grid.Row="1">Treeshold:</Label>

@@ -156,7 +156,10 @@ namespace ReversibleSignatureAnalyzer.View
             }
             else if (RbAlgorithm3.IsChecked.Value)
             {
-                return currentDeConfiguration;
+                if (currentDeConfiguration is HistogramShiftingConfiguration)
+                    return currentDeConfiguration;
+                else
+                    return new HistogramShiftingConfiguration(1, false, currentDeConfiguration.EmbeddingChanels);
             }
             throw new Exception("No algorithm selected");
         }
@@ -254,7 +257,7 @@ namespace ReversibleSignatureAnalyzer.View
         {
             HashSet<EmbeddingChanel> set = new HashSet<EmbeddingChanel>();
             set.Add(EmbeddingChanel.R);
-            HistogramShiftingConfiguration config = new HistogramShiftingConfiguration(1, set);
+            HistogramShiftingConfiguration config = new HistogramShiftingConfiguration(1, false, set);
             var dialogBox = new ConfigurationDialogBox.HistogramShiftingConfiguraitonDialogBox(
                 config.EmbeddingChanels)
             {
@@ -278,7 +281,7 @@ namespace ReversibleSignatureAnalyzer.View
                     {
                         embeddingChanels.Add(EmbeddingChanel.B);
                     }
-                    currentDeConfiguration = new HistogramShiftingConfiguration(1, embeddingChanels);
+                    currentDeConfiguration = new HistogramShiftingConfiguration(1, dialogBox.cbBruteforce.IsChecked == true, embeddingChanels);
                 }
             }
         }

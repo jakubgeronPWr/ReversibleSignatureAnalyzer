@@ -1,4 +1,5 @@
 ﻿using ReversibleSignatureAnalyzer.Controller.Algorithm;
+using ReversibleSignatureAnalyzer.Controller.Algorithm.HistogramShifting;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -529,27 +530,35 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
             return new Tuple<Bitmap, string>(originalImage, payload);
         }
 
-        public Tuple<Bitmap, string> TryForPayload(Bitmap encodedImage)
+        public Tuple<Bitmap, string> TryForPayload(Bitmap encodedImage, AlgorithmConfiguration algorithmConfiguration)
         {
-            Bitmap originalImage = null;
+            Bitmap originalImage = encodedImage;
             string payload = "";
 
-            var red = TryForPayloadChannel(encodedImage, EmbeddingChanel.R);
-            if (red.Item1 != null)
+            if (algorithmConfiguration.EmbeddingChanels.Contains(EmbeddingChanel.R))
             {
-                return red;
+                var red = TryForPayloadChannel(encodedImage, EmbeddingChanel.R);
+                if (red.Item1 != null)
+                {
+                    return red;
+                }
             }
-            var green = TryForPayloadChannel(encodedImage, EmbeddingChanel.G);
-            if (green.Item1 != null)
+            if (algorithmConfiguration.EmbeddingChanels.Contains(EmbeddingChanel.R))
             {
-                return green;
-            }
-            var blue = TryForPayloadChannel(encodedImage, EmbeddingChanel.B);
-            if (blue.Item1 != null)
+                var green = TryForPayloadChannel(encodedImage, EmbeddingChanel.G);
+                if (green.Item1 != null)
+                {
+                    return green;
+                }
+            }   
+            if (algorithmConfiguration.EmbeddingChanels.Contains(EmbeddingChanel.R))
             {
-                return blue;
+                var blue = TryForPayloadChannel(encodedImage, EmbeddingChanel.B);
+                if (blue.Item1 != null)
+                {
+                    return blue;
+                }
             }
-
             return new Tuple<Bitmap, string>(originalImage, payload);
         }
 
@@ -605,41 +614,49 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
 
         public Tuple<Bitmap, string> Decode(Bitmap encodedImage, AlgorithmConfiguration algorithmConfiguration)
         {
-            Bitmap originalImage;
-            string payload;
-
-            // read retrival pixel
-            Color retrivalPixel = encodedImage.GetPixel(0, 0);
-
-            // gather retrival data
-            HashSet<EmbeddingChanel> embeddingChannels = retriveChannels(retrivalPixel);
-            BitArray dataBitArray = gatherPayload(encodedImage, embeddingChannels, retrivalPixel);
-            byte[] fullData = new byte[dataBitArray.Length];
-            dataBitArray.CopyTo(fullData, 0);
-            int retrivalDataLength = BitConverter.ToInt32(fullData, 0);
-            byte[] retrivalDataBytes = new byte[retrivalDataLength];
-            for (int i = 0; i < retrivalDataLength; i++)
+            var conf = (HistogramShiftingConfiguration)algorithmConfiguration;
+            if (!conf.bruteforce)
             {
-                retrivalDataBytes[i] = fullData[i + 4];
+                Bitmap originalImage;
+                string payload;
+
+                // read retrival pixel
+                Color retrivalPixel = encodedImage.GetPixel(0, 0);
+
+                // gather retrival data
+                HashSet<EmbeddingChanel> embeddingChannels = retriveChannels(retrivalPixel);
+                BitArray dataBitArray = gatherPayload(encodedImage, embeddingChannels, retrivalPixel);
+                byte[] fullData = new byte[dataBitArray.Length];
+                dataBitArray.CopyTo(fullData, 0);
+                int retrivalDataLength = BitConverter.ToInt32(fullData, 0);
+                byte[] retrivalDataBytes = new byte[retrivalDataLength];
+                for (int i = 0; i < retrivalDataLength; i++)
+                {
+                    retrivalDataBytes[i] = fullData[i + 4];
+                }
+                RetrivalData retrival = (RetrivalData)byteArrayToObject(retrivalDataBytes);
+
+                // separate payload
+                byte[] payloadBytes = new byte[fullData.Length - 4 - retrivalDataLength];
+                for (int i = 0; i < retrivalDataLength; i++)
+                {
+                    payloadBytes[i] = fullData[i + 4 + retrivalDataLength];
+                }
+                payload = BitArrayToString(new BitArray(payloadBytes)).Replace("\0", string.Empty);
+
+                // set retrival pixel
+                originalImage = encodedImage;
+                originalImage.SetPixel(0, 0, Color.FromArgb(retrival.a, retrival.r, retrival.g, retrival.b));
+
+                // retrive original image
+                originalImage = reshiftImage(encodedImage, retrival);
+
+                return new Tuple<Bitmap, string>(originalImage, payload);
             }
-            RetrivalData retrival = (RetrivalData)byteArrayToObject(retrivalDataBytes);
-
-            // separate payload
-            byte[] payloadBytes = new byte[fullData.Length - 4 - retrivalDataLength];
-            for (int i = 0; i < retrivalDataLength; i++)
-            {
-                payloadBytes[i] = fullData[i + 4 + retrivalDataLength];
+            else
+            {  // Bruteforce method
+                return TryForPayload(encodedImage, algorithmConfiguration);
             }
-            payload = BitArrayToString(new BitArray(payloadBytes)).Replace("\0", string.Empty);
-
-            // set retrival pixel
-            originalImage = encodedImage;
-            originalImage.SetPixel(0, 0, Color.FromArgb(retrival.a, retrival.r, retrival.g, retrival.b));
-
-            // retrive original image
-            originalImage = reshiftImage(encodedImage, retrival);
-
-            return new Tuple<Bitmap, string>(originalImage, payload);
         }
     }
 }
