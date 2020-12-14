@@ -39,10 +39,46 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
                 if (value < 0)
                     oneElemet = 0;
                 sb.Append(Convert.ToChar(Convert.ToInt32(oneElemet)));
-
             }
 
             return sb.ToString();
+        }
+
+        public double[,] ArrayPayloadToDiagonalArray(double[] payload, int width, int height)
+        {
+            var result2DArray = new double[width, height];
+            for (int i = 0; i < result2DArray.GetLength(0); i++)
+            {
+                for (int j = 0; j < result2DArray.GetLength(1); j++)
+                {
+                    result2DArray[j, i] = 0;
+                }
+            }
+
+            int payloadLenght = payload.Length;
+            var squareLength = (width <= height) ? width : height;
+
+
+            if (payloadLenght > squareLength)
+            {
+                throw new ArithmeticException("Message is too long");
+            }
+            else
+            {
+                Debug.WriteLine("2D Payload array: ");
+                
+                for (int k = 0; k < squareLength; k++)
+                {
+                    Debug.WriteLine("");
+                    Debug.Write("[");
+                    if ( k < payload.Length)
+                        result2DArray[k, k] = payload[k];
+                    Debug.Write($"{result2DArray[k, k]}, ");
+                    Debug.Write("]");
+                }
+            }
+
+            return result2DArray;
         }
 
         public double[,] ArrayPayloadTo2DArray(double[] payload, int width, int height)
@@ -110,6 +146,29 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             //{
             //    Debug.Write(value);
             //}
+
+            return resultArray;
+        }
+
+        public double[] ArrayDiagonalToArray(double[,] payload)
+        {
+            int width = payload.GetLength(0);
+            int height = payload.GetLength(1);
+
+            int matrixLength = (width <= height) ? width : height;
+
+            double[] resultArray = new double[matrixLength];
+
+            for (int i = 0; i < matrixLength; i++)
+            {
+                resultArray[i] = payload[i,i];
+            }
+
+            Debug.WriteLine("Payload extraction 1D array: ");
+            foreach (var value in resultArray)
+            {
+                Debug.Write(value);
+            }
 
             return resultArray;
         }

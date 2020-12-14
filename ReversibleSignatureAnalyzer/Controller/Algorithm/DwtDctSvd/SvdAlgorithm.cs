@@ -14,6 +14,7 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
         private double[,] _inMemoryUw;
         private double[,] _inMemoryVwt;
         private double[,] _inMemorySo;
+        private double _alpha = 0.01;
 
         public double[][,] HidePayloadSVD(double[][,] hostMatrics, double[,] payloadMatrix, string channel)
         {
@@ -82,11 +83,11 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
 
         public double[,] HidePayload(double[,] matrix, double[,] payloadMatrix)
         {
-            double[,] newMatrix = matrix.Clone() as double[,];
+            double[,] newMatrix = matrix.DeepClone();
             double[,] resultMatrix;// = new double[newMatrix.GetLength(0), newMatrix.GetLength(1)];
-            var svdHost = new SingularValueDecomposition(newMatrix, true, true, true, true);
+            var svdHost = new SingularValueDecomposition(newMatrix, true, true, false, true);
             //var svdPayload = new SingularValueDecomposition(payloadMatrix, true, true, true, true);
-            var sO = svdHost.DiagonalMatrix.Clone() as double[,];
+            var sO = svdHost.DiagonalMatrix.DeepClone();
             //var sp = svdPayload.DiagonalMatrix;
             
             if (sO.GetLength(0) == payloadMatrix.GetLength(0) &&
@@ -100,20 +101,16 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
 
                 _inMemorySo = svdHost.DiagonalMatrix.DeepClone();
 
-                var alphaPayload = payloadMatrix.Multiply(0.1);
+                //var alphaPayload = payloadMatrix.Multiply(_alpha);
 
                 //Debug.WriteLine("AlphaPayload: ");
                 //PrintMatrix(alphaPayload);
 
-                var sM = Add2DMatixes(sO, alphaPayload);
+                //var sM = Add2DMatixes(sO, alphaPayload);
 
+                var sM = sO;
                 //Debug.WriteLine("Sm: ");
                 //PrintMatrix(sM);
-
-                var svdSM = new SingularValueDecomposition(sM, true, true, true, true);
-                var sW = svdSM.DiagonalMatrix.DeepClone();
-                _inMemoryUw = svdSM.LeftSingularVectors.DeepClone();
-                _inMemoryVwt = svdSM.RightSingularVectors.Transpose().DeepClone();
 
                 //Debug.WriteLine("Uo matrix: ");
                 //PrintMatrix(svdHost.LeftSingularVectors);
@@ -122,8 +119,12 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
                 //Debug.WriteLine("Sw: ");
                 //PrintMatrix(sW);
 
-
-                resultMatrix = Elementwise.Multiply(Elementwise.Multiply(svdHost.LeftSingularVectors, sW), svdHost.RightSingularVectors.Transpose());
+                //resultMatrix = Elementwise.Multiply(Elementwise.Multiply(svdHost.LeftSingularVectors, sM), svdHost.RightSingularVectors.Transpose());
+                resultMatrix = Matrix.Dot(Matrix.Dot(svdHost.LeftSingularVectors, sM), svdHost.RightSingularVectors.Transpose());
+                
+                var resSVD = new SingularValueDecomposition(resultMatrix, true, true, false, true);
+                //Debug.WriteLine("sM after svd");
+                //PrintMatrix(resSVD.DiagonalMatrix);
                 //resultMatrix = Elementwise.Multiply(Elementwise.Multiply(svdHost.LeftSingularVectors, uSP), svdHost.RightSingularVectors.Transpose());
                 //resultMatrix = svdHost.Reverse();
 
@@ -146,29 +147,37 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
 
         public Tuple<double[,], double[,]> ExtractPayload(double[,] watermarkedMatrix) //, double[,] originalMatrix)
         {
+            double[,] watermarked2D = watermarkedMatrix.DeepClone();
             //var result = new Dictionary<string, double[,]>();
-            var svdWatermarked = new SingularValueDecomposition(watermarkedMatrix, true, true, true, true);
-            //var svdOriginal = new SingularValueDecomposition(originalMatrix, true, true, true, true);
+            Debug.WriteLine("in memory S0");
+            PrintMatrix(_inMemorySo);
 
-            var watermarkedS = svdWatermarked.DiagonalMatrix;
-            //var originalMatrixS = svdOriginal.DiagonalMatrix;
-            var sM = Elementwise.Multiply(Elementwise.Multiply(_inMemoryUw, watermarkedS), _inMemoryVwt);
+            var svdWatermarked = new SingularValueDecomposition(watermarked2D, true, true, false, true);
+            var sM = svdWatermarked.DiagonalMatrix;
+
+            Debug.WriteLine("Sm encoding matrix: ");
+            PrintMatrix(sM);
 
             var watermark2d = new double[sM.GetLength(0), sM.GetLength(1)];
 
-            //Debug.WriteLine("[");
+            Debug.WriteLine("Extracted payload:");
+            Debug.WriteLine("[");
             for (int i = 0; i < sM.GetLength(1); i++)
             {
                 Debug.WriteLine("");
                 for (int j = 0; j < sM.GetLength(0); j++)
                 {
-                    watermark2d[j, i] = sM[j, i] - _inMemorySo[j, i];
-                    //Debug.Write($"{sM[j, i]} |");
+                    decimal valueWatermarked = Convert.ToDecimal(Math.Round(sM[j, i], 4));
+                    decimal valueOrigin = Convert.ToDecimal(Math.Round(_inMemorySo[j, i], 4));
+                    decimal difference = Decimal.Subtract(valueWatermarked, valueOrigin);
+                    decimal alpha = Convert.ToDecimal(_alpha);
+                    watermark2d[j, i] = Convert.ToDouble( difference / alpha);
+                    Debug.Write($"{watermark2d[j, i]} |");
                 }
             }
-            //Debug.WriteLine("]");
+            Debug.WriteLine("]");
 
-            var origin2D =  Elementwise.Multiply(Elementwise.Multiply(svdWatermarked.LeftSingularVectors, _inMemorySo), svdWatermarked.RightSingularVectors);
+            var origin2D =  Matrix.Dot(Matrix.Dot(svdWatermarked.LeftSingularVectors, _inMemorySo), svdWatermarked.RightSingularVectors.Transpose());
             return new Tuple<double[,], double[,]>(origin2D, watermark2d);
         }
 

@@ -41,7 +41,7 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
                 data[i] = temp[i];
         }
 
-        public double[,] DwtF(double[,] data, int iterations)
+        public void DwtF(double[,] data, int iterations)
         {
             int rows = data.GetLength(0);
             int cols = data.GetLength(1);
@@ -81,8 +81,6 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
                         data[i, j] = col[i];
                 }
             }
-
-            return data;
         }
 
         public void IDwtF(double[] data)
@@ -101,7 +99,7 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
                 data[i] = temp[i];
         }
 
-        public double[,] IDwtF(double[,] data, int iterations)
+        public void IDwtF(double[,] data, int iterations)
         {
             int rows = data.GetLength(0);
             int cols = data.GetLength(1);
@@ -140,8 +138,6 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
                         data[i, j] = row[j];
                 }
             }
-
-            return data;
         }
 
         public double Scale(double fromMin, double fromMax, double toMin, double toMax, double x)

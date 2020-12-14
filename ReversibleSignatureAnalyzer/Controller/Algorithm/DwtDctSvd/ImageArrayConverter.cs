@@ -128,6 +128,56 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             return matrices;
         }
 
+        public decimal[][,] BitmapToPrecisionMatrices(Bitmap b)
+        {
+            var width = b.Width;
+            var height = b.Height;
+
+            decimal[][,] matrices = new decimal[3][,];
+
+            for (int i = 0; i < 3; i++)
+            {
+                matrices[i] = new decimal[width, height];
+            }
+
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    //matrices[0][x, y] = b.GetPixel(x, y).A - normOffset;
+                    matrices[0][x, y] = b.GetPixel(x, y).R - normOffset;
+                    matrices[1][x, y] = b.GetPixel(x, y).G - normOffset;
+                    matrices[2][x, y] = b.GetPixel(x, y).B - normOffset;
+                }
+            }
+            return matrices;
+        }
+
+        public Bitmap MatricesPrecisionToBitmap(decimal[][,] matrices, bool offset = true)
+        {
+            decimal[,] first = matrices[2];
+            int width = first.GetLength(0);
+            int height = first.GetLength(1);
+
+            Bitmap bitmap = new Bitmap(width, height);
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    //double alpha = matrices[0][x, y];
+                    double r = Convert.ToDouble(matrices[0][x, y]);
+                    double g = Convert.ToDouble(matrices[1][x, y]);
+                    double b = Convert.ToDouble(matrices[2][x, y]);
+
+                    byte R = (byte)(normOut(r, offset));
+                    byte G = (byte)(normOut(g, offset));
+                    byte B = (byte)(normOut(b, offset));
+                    bitmap.SetPixel(x, y, Color.FromArgb(R, G, B));
+                }
+            }
+            return bitmap;
+        }
+
 
 
         //__________________________________________________________________________________________
