@@ -543,7 +543,7 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
                     return red;
                 }
             }
-            if (algorithmConfiguration.EmbeddingChanels.Contains(EmbeddingChanel.R))
+            if (algorithmConfiguration.EmbeddingChanels.Contains(EmbeddingChanel.G))
             {
                 var green = TryForPayloadChannel(encodedImage, EmbeddingChanel.G);
                 if (green.Item1 != null)
@@ -551,7 +551,7 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
                     return green;
                 }
             }   
-            if (algorithmConfiguration.EmbeddingChanels.Contains(EmbeddingChanel.R))
+            if (algorithmConfiguration.EmbeddingChanels.Contains(EmbeddingChanel.B))
             {
                 var blue = TryForPayloadChannel(encodedImage, EmbeddingChanel.B);
                 if (blue.Item1 != null)
