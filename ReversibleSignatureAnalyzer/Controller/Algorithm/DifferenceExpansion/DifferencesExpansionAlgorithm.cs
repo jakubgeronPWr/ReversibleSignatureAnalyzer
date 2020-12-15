@@ -364,29 +364,49 @@ namespace ReversibleSignatureAnalyzer.Model
 
         public Tuple<Bitmap, string> Decode(Bitmap encodedImage, AlgorithmConfiguration configuration)
         {
-            DifferencesExpansionConfiguration config = (DifferencesExpansionConfiguration) configuration;
             Bitmap image = new Bitmap(encodedImage);
-            Direction currentEmbeddingDirection = config.EmbeddingDirection;
-            string payload = "";
-            for (int i = 0; i < configuration.Iterations; i++)
+            if (configuration is DifferencesExpansionConfiguration)
             {
-                List<string> payloadChunks = new List<string>();
-                if (config.EmbeddingChanels.Contains(EmbeddingChanel.R))
-                {
-                    payloadChunks.Add(DecodeImage(image, currentEmbeddingDirection, EmbeddingChanel.R));
-                }
-                if (config.EmbeddingChanels.Contains(EmbeddingChanel.G))
-                {
-                    payloadChunks.Add(DecodeImage(image, currentEmbeddingDirection, EmbeddingChanel.G));
-                }
-                if (config.EmbeddingChanels.Contains(EmbeddingChanel.B))
-                {
-                    payloadChunks.Add(DecodeImage(image, currentEmbeddingDirection, EmbeddingChanel.B));
-                }
-                currentEmbeddingDirection = GetChangedEmbeddingDirection(currentEmbeddingDirection);
-                payload = String.Join("", payloadChunks);
+                return Decode(image, (DifferencesExpansionConfiguration)configuration);
             }
-            return new Tuple<Bitmap, string>(image, payload);
+            if(configuration is DifferenceExpansionBruteForceConfiguration)
+            {
+                return BruteforceDecode(image, (DifferenceExpansionBruteForceConfiguration)configuration);
+            }
+            return null;
+        }
+
+        private Tuple<Bitmap, string> Decode(Bitmap image, DifferencesExpansionConfiguration config)
+        {
+            try
+            {
+                Direction currentEmbeddingDirection = config.EmbeddingDirection;
+                string payload = "";
+                for (int i = 0; i < config.Iterations; i++)
+                {
+                    List<string> payloadChunks = new List<string>();
+                    if (config.EmbeddingChanels.Contains(EmbeddingChanel.R))
+                    {
+                        payloadChunks.Add(DecodeImage(image, currentEmbeddingDirection, EmbeddingChanel.R));
+                    }
+                    if (config.EmbeddingChanels.Contains(EmbeddingChanel.G))
+                    {
+                        payloadChunks.Add(DecodeImage(image, currentEmbeddingDirection, EmbeddingChanel.G));
+                    }
+                    if (config.EmbeddingChanels.Contains(EmbeddingChanel.B))
+                    {
+                        payloadChunks.Add(DecodeImage(image, currentEmbeddingDirection, EmbeddingChanel.B));
+                    }
+                    currentEmbeddingDirection = GetChangedEmbeddingDirection(currentEmbeddingDirection);
+                    payload = String.Join("", payloadChunks);
+                }
+                return new Tuple<Bitmap, string>(image, payload);
+            }
+            catch
+            {
+
+            }
+            return null;
         }
 
         private string DecodeImage(Bitmap image, Direction embeddingDirection, EmbeddingChanel embeddingChannel)
@@ -459,6 +479,60 @@ namespace ReversibleSignatureAnalyzer.Model
             }
             RecalculateImagePixels(image, averages, differences, embeddingDirection, embeddingChannel);
             return Encoding.ASCII.GetString(payload);
+        }
+
+        public Tuple<Bitmap, string> BruteforceDecode(Bitmap inputImage, DifferenceExpansionBruteForceConfiguration bruteForceConfiguration)
+        {
+            Bitmap processedImage = inputImage;
+            List<string> payloadChunks = new List<string>();
+            foreach (EmbeddingChanel embeddingChannel in Enum.GetValues(typeof(EmbeddingChanel)))
+            {
+                if(bruteForceConfiguration.EmbeddingChanels.Contains(embeddingChannel))
+                {
+                    Tuple<Bitmap, string> imageAndPayload = TryDecodeImageForChannel(processedImage, embeddingChannel, bruteForceConfiguration);
+                    if (isDecodingSuccessfull(imageAndPayload))
+                    {
+                        processedImage = imageAndPayload.Item1;
+                        payloadChunks.Add(imageAndPayload.Item2);
+                    }
+                }
+            }
+            return payloadChunks.Count > 0 ? new Tuple<Bitmap, string>(processedImage, String.Join("", payloadChunks)) : null;
+        }
+
+        public Tuple<Bitmap, string> TryDecodeImageForChannel(Bitmap inputImage, EmbeddingChanel embeddingChanel, DifferenceExpansionBruteForceConfiguration bruteForceConfiguration)
+        {
+            foreach (Direction direction in Enum.GetValues(typeof(Direction)))
+            {
+                if(bruteForceConfiguration.EmbeddingDirections.Contains(direction))
+                {
+                    Tuple<Bitmap, string> imageAndPayload = TryDecodeImageForDirectionAndChannel(inputImage, Direction.Horizontal, embeddingChanel);
+                    if (isDecodingSuccessfull(imageAndPayload))
+                    {
+                        return imageAndPayload;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private bool isDecodingSuccessfull(Tuple<Bitmap, string> imageAndPayload)
+        {
+            return imageAndPayload != null;
+        }
+
+        public Tuple<Bitmap, string> TryDecodeImageForDirectionAndChannel(Bitmap inputImage, Direction embeddingDirection, EmbeddingChanel embeddingChannel)
+        {
+            Bitmap image = new Bitmap(inputImage);
+            try
+            {
+                return new Tuple<Bitmap, string>(image, DecodeImage(image, embeddingDirection, embeddingChannel));
+            }
+            catch
+            {
+
+            }
+            return null;
         }
 
     }
