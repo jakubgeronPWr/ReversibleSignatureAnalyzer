@@ -70,19 +70,6 @@ namespace ConfigurationDialogBox
             }
         }
 
-        private void thresholdUp_Click(object sender, RoutedEventArgs e)
-        {
-            Threshold++;
-        }
-
-        private void thresholdDown_Click(object sender, RoutedEventArgs e)
-        {
-            if (Threshold > 1)
-            {
-                Threshold--;
-            }
-        }
-
         private void txtThreshold_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (tbThreshold == null)
@@ -93,6 +80,34 @@ namespace ConfigurationDialogBox
             {
                 tbThreshold.Text = threshold.ToString();
             }
+        }
+
+        private void cbConfigurationType_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (cbConfigurationType.SelectedItem != null)
+            {
+                string selection = (e.AddedItems[0] as ComboBoxItem).Content as string;
+                if (selection == "Standard")
+                {
+                    GdStandardConfiguration.Visibility = Visibility.Visible;
+                    GdBruteForceConfiguration.Visibility = Visibility.Collapsed;
+                }
+                if (selection == "Brute force")
+                {
+                    GdBruteForceConfiguration.Visibility = Visibility.Visible;
+                    GdStandardConfiguration.Visibility = Visibility.Collapsed;
+                }
+                
+            }
+        }
+
+        private void okButton_BF_Click(object sender, RoutedEventArgs e)
+        {
+            if (!IsValid(this))
+            {
+                return;
+            }
+            DialogResult = true;
         }
     }
 }
