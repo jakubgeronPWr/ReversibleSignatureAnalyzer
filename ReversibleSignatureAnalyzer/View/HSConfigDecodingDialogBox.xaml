@@ -3,11 +3,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        x:Class="ConfigurationDialogBox.HistogramShiftingConfiguraitonDialogBox"
+        x:Class="ConfigurationDialogBox.HistogramShiftingConfiguraitonDecodingDialogBox"
         xmlns:local="clr-namespace:ConfigurationDialogBox"
         mc:Ignorable="d"
         Title="Histogram Shifting" 
-        Height="134" 
+        Height="167" 
         Width="300"
         MinHeight="10"
         MinWidth="300"
@@ -60,8 +60,8 @@
             <CheckBox Name="cbB" Margin="20,2,0,10">B</CheckBox>
         </StackPanel>
 
-        <Label Grid.Column="0" Grid.Row="1" Visibility="Collapsed">Bruteforce:</Label>
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,0" Height="Auto" Width="Auto" Grid.Column="1" Grid.Row="1" Visibility="Collapsed">
+        <Label Grid.Column="0" Grid.Row="1">Bruteforce:</Label>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,0" Height="Auto" Width="Auto" Grid.Column="1" Grid.Row="1">
             <CheckBox x:Name="cbBruteforce" IsChecked="False" Margin="4,-2,0,0" Content="Apply Bruteforce"/>
         </StackPanel>
         

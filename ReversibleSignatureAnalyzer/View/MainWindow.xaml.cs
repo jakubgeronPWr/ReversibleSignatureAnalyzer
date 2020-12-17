@@ -15,6 +15,7 @@ using ReversibleSignatureAnalyzer.Controller.Algorithm.DifferenceExpansion;
 using ReversibleSignatureAnalyzer.Controller.Algorithm;
 using System.Collections.Generic;
 using ReversibleSignatureAnalyzer.Controller.Algorithm.HistogramShifting;
+using ReversibleSignatureAnalyzer.Controller.Algorithm.GlobalDecoding;
 
 namespace ReversibleSignatureAnalyzer.View
 {
@@ -40,6 +41,7 @@ namespace ReversibleSignatureAnalyzer.View
         private IReversibleWatermarkingAlgorithm deAlgorithm = new DifferencesExpansionAlgorithm();
         private IReversibleWatermarkingAlgorithm dwtDctSvdAlgotithm = new DwtDctSvdAlgorithm();
         private IReversibleWatermarkingAlgorithm hsAlgorithm = new HistogramShiftingAlgorithm();
+        private IReversibleWatermarkingAlgorithm globalAlgorithm = new GlobalDecodingAlgorithm();
 
 
         public MainWindow()
@@ -112,6 +114,18 @@ namespace ReversibleSignatureAnalyzer.View
             TvExportFileName.Visibility = Visibility.Visible;
         }
 
+        private void CbActivityType_selectionChanged (object sender, RoutedEventArgs e) // Hide/Display option to bruteforce all, depeding on context
+        {
+            if (CbActivityType.Text == TbAnalyze.Content.ToString())
+            {
+                RbAlgorithm4.Visibility = Visibility.Collapsed;
+            }
+            else if (CbActivityType.Text == TbAdd.Content.ToString())
+            {
+                RbAlgorithm4.Visibility = Visibility.Visible;
+            }
+        }
+
         private bool isWatermarkingModeSelected()
         {
             return CbActivityType.Text == TbAdd.Content.ToString();
@@ -148,6 +162,10 @@ namespace ReversibleSignatureAnalyzer.View
             {
                 return hsAlgorithm;
             }
+            else if (RbAlgorithm4.IsChecked.Value)
+            {
+                return globalAlgorithm;
+            }
             throw new Exception("No algorithm selected");
         }
 
@@ -181,6 +199,10 @@ namespace ReversibleSignatureAnalyzer.View
             else if (RbAlgorithm3.IsChecked.Value)
             {
                 return currentDecodingHsConfiguration;
+            }
+            else if (RbAlgorithm4.IsChecked.Value)
+            {
+                return null;
             }
             throw new Exception("No algorithm selected");
         }
@@ -337,7 +359,7 @@ namespace ReversibleSignatureAnalyzer.View
                         {
                             embeddingChanels.Add(EmbeddingChanel.B);
                         }
-                        currentEncodingHsConfiguration = new HistogramShiftingConfiguration(dialogBox.cbBruteforce.IsChecked == true, embeddingChanels);
+                        currentEncodingHsConfiguration = new HistogramShiftingConfiguration(false, embeddingChanels);
                     }
                 }
             }
@@ -346,7 +368,7 @@ namespace ReversibleSignatureAnalyzer.View
                 HashSet<EmbeddingChanel> set = new HashSet<EmbeddingChanel>();
                 set.Add(EmbeddingChanel.R);
                 HistogramShiftingConfiguration config = new HistogramShiftingConfiguration(false, set);
-                var dialogBox = new ConfigurationDialogBox.HistogramShiftingConfiguraitonDialogBox(
+                var dialogBox = new ConfigurationDialogBox.HistogramShiftingConfiguraitonDecodingDialogBox(
                     config.EmbeddingChanels)
                 {
                     Owner = this,
