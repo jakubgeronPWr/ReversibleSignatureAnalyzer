@@ -23,15 +23,15 @@
             <ComboBoxItem Name="TbAnalyze" Content="Analyze Image"/>
         </ComboBox>
 
-        <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,15,0,0" Height="40">
-            <Button x:Name="BtnImportFile" Content="Import" HorizontalAlignment="Left" Margin="15,0,0,0" VerticalAlignment="Bottom" FontWeight="Bold" FontSize="18" Background="#FF959595" Foreground="White" Click="BtnImportFile_Click" Height="40" Width="90"/>
-            <TextBox x:Name="TvImportFilePath" Margin="5,0,0,0" Text="import file path" TextWrapping="Wrap" VerticalAlignment="Stretch" IsEnabled="True" Width="316" ScrollViewer.VerticalScrollBarVisibility="Auto" Background="#FFACACAC"/>
-        </StackPanel>
+        <DockPanel Grid.Row="2" Grid.Column="0"  VerticalAlignment="Top" Margin="0,15,0,0" Height="40">
+            <Button x:Name="BtnImportFile" Content="Import" HorizontalAlignment="Left" Margin="15,0,5,0" VerticalAlignment="Bottom" FontWeight="Bold" FontSize="18" Background="#FF959595" Foreground="White" Click="BtnImportFile_Click" Height="40" Width="90"/>
+            <TextBox x:Name="TvImportFilePath" Margin="0,0,0,0" Text="import file path" TextWrapping="Wrap" VerticalAlignment="Stretch" IsEnabled="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Background="#FFACACAC"/>
+        </DockPanel>
 
-        <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,219,0,0">
-            <Button x:Name="BtnExportFile" Content="Export" HorizontalAlignment="Center" Margin="15,0,0,0" VerticalAlignment="Stretch" FontWeight="Bold" FontSize="18" Background="#FF959595" Foreground="White" Height="40" Width="90" Click="BtnExportFile_Click" Visibility="Collapsed"/>
-            <TextBox x:Name="TvExportFileName" Margin="5,0,30,0" Text="export file path" TextWrapping="Wrap" VerticalAlignment="Stretch" Width="316" Visibility="Collapsed"/>
-        </StackPanel>
+        <DockPanel Grid.Row="2" Grid.Column="0" VerticalAlignment="Top" Margin="0,220,0,0">
+            <Button x:Name="BtnExportFile" Content="Export" HorizontalAlignment="Center" Margin="15,0,5,0" VerticalAlignment="Stretch" FontWeight="Bold" FontSize="18" Background="#FF959595" Foreground="White" Height="40" Width="90" Click="BtnExportFile_Click" Visibility="Collapsed"/>
+            <TextBox x:Name="TvExportFileName" Margin="0,0,0,0" Text="export file path" TextWrapping="Wrap" Visibility="Collapsed"/>
+        </DockPanel>
 
         <GroupBox Header="Algorithm" Grid.Row="0" Grid.Column="0" VerticalAlignment="Top" Foreground="White" Margin="15,75,0,0" Grid.RowSpan="2" >
             <StackPanel>
@@ -42,7 +42,7 @@
         </GroupBox>
 
         <Button x:Name="BtnRun" Content="RUN" Grid.Row="2" Grid.Column="0" VerticalAlignment="Top" Height="40" Background="#FFA41515" Panel.ZIndex="-4" FontSize="18" FontWeight="Bold" Foreground="White" Margin="15,85,0,0" Click="BtnRun_Click" />
-        <RichTextBox x:Name="TvPayload" Height="64" Margin="15,128,0,0" Grid.Row="2" VerticalAlignment="Top" TextChanged="TvPayload_TextChanged" Visibility="Collapsed">
+        <RichTextBox x:Name="TvPayload" Height="64" Margin="15,130,0,0" Grid.Row="2" VerticalAlignment="Top" TextChanged="TvPayload_TextChanged" Visibility="Collapsed">
             <FlowDocument>
                 <Paragraph>
                     <Run Text="Type in your payload"/>
