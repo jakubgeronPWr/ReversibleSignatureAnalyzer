@@ -5,7 +5,7 @@ using System.Text;
 
 namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DifferenceExpansion
 {
-    class DifferencesExpansionConfiguration : AlgorithmConfiguration
+    public class DifferencesExpansionConfiguration : AlgorithmConfiguration
     {
         public int Threeshold { get; set; }
         public Direction EmbeddingDirection { get; set; }

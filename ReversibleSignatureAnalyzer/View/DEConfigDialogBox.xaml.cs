@@ -1,4 +1,6 @@
-﻿using ReversibleSignatureAnalyzer.Model;
+﻿using ReversibleSignatureAnalyzer.Controller.Algorithm;
+using ReversibleSignatureAnalyzer.Controller.Algorithm.DifferenceExpansion;
+using ReversibleSignatureAnalyzer.Model;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -10,15 +12,38 @@ namespace ConfigurationDialogBox
 {
     public partial class DifferencesExpansionConfiguraitonDialogBox : Window
     {
-        public DifferencesExpansionConfiguraitonDialogBox(int threshold, Direction embeddingDirection, HashSet<EmbeddingChanel> embeddingChanels)
+        public DifferencesExpansionConfiguraitonDialogBox(DifferencesExpansionConfiguration standardDEConfig,
+                                                          DifferenceExpansionBruteForceConfiguration bruteForceDEConfig,
+                                                          AlgorithmConfiguration currentConfiguration)
         {
             InitializeComponent();
-            this.threshold = threshold;
-            tbThreshold.Text = threshold.ToString();
-            cbEmbeddingDirection.SelectedIndex = (int) embeddingDirection;
-            cbR.IsChecked = embeddingChanels.Contains(EmbeddingChanel.R);
-            cbG.IsChecked = embeddingChanels.Contains(EmbeddingChanel.G);
-            cbB.IsChecked = embeddingChanels.Contains(EmbeddingChanel.B);
+
+            if (standardDEConfig != null)
+            {
+                this.threshold = standardDEConfig.Threeshold;
+                tbThreshold.Text = threshold.ToString();
+                cbEmbeddingDirection.SelectedIndex = (int)standardDEConfig.EmbeddingDirection;
+                cbR.IsChecked = standardDEConfig.EmbeddingChanels.Contains(EmbeddingChanel.R);
+                cbG.IsChecked = standardDEConfig.EmbeddingChanels.Contains(EmbeddingChanel.G);
+                cbB.IsChecked = standardDEConfig.EmbeddingChanels.Contains(EmbeddingChanel.B);
+                ComboBoxItem standardComboBoxItem = new ComboBoxItem();
+                standardComboBoxItem.Content = "Standard";
+                standardComboBoxItem.IsSelected = currentConfiguration is DifferencesExpansionConfiguration;
+                cbConfigurationType.Items.Add(standardComboBoxItem);
+            }
+
+            if (bruteForceDEConfig != null)
+            {
+                cbHorizontal_BF.IsChecked = bruteForceDEConfig.EmbeddingDirections.Contains(Direction.Horizontal);
+                cbVertical_BF.IsChecked = bruteForceDEConfig.EmbeddingDirections.Contains(Direction.Vertical);
+                cbR_BF.IsChecked = bruteForceDEConfig.EmbeddingChanels.Contains(EmbeddingChanel.R);
+                cbG_BF.IsChecked = bruteForceDEConfig.EmbeddingChanels.Contains(EmbeddingChanel.G);
+                cbB_BF.IsChecked = bruteForceDEConfig.EmbeddingChanels.Contains(EmbeddingChanel.B);
+                ComboBoxItem bruteForceItem = new ComboBoxItem();
+                bruteForceItem.Content = "Brute force";
+                bruteForceItem.IsSelected = currentConfiguration is DifferenceExpansionBruteForceConfiguration;
+                cbConfigurationType.Items.Add(bruteForceItem);
+            }
         }
 
         public Thickness DocumentMargin

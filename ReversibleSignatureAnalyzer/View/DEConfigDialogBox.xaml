@@ -60,8 +60,6 @@
 
             <Label Grid.Column="0" Grid.Row="1">Configuration  type:</Label>
             <ComboBox Name="cbConfigurationType" Grid.Column="1" Grid.Row="1" Margin="0,3,0,5" SelectionChanged="cbConfigurationType_SelectionChanged">
-                <ComboBoxItem IsSelected="True">Standard</ComboBoxItem>
-                <ComboBoxItem>Brute force</ComboBoxItem>
             </ComboBox>
 
         </Grid >

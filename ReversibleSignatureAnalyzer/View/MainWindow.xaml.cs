@@ -16,6 +16,7 @@ using ReversibleSignatureAnalyzer.Controller.Algorithm;
 using System.Collections.Generic;
 using ReversibleSignatureAnalyzer.Controller.Algorithm.HistogramShifting;
 using ReversibleSignatureAnalyzer.Controller.Algorithm.GlobalDecoding;
+using ConfigurationDialogBox;
 
 namespace ReversibleSignatureAnalyzer.View
 {
@@ -33,8 +34,11 @@ namespace ReversibleSignatureAnalyzer.View
         private bool isFileLoaded = true;
         private BitmapImage importedImage;
         private BitmapImage resultImage;
-        private AlgorithmConfiguration currentEncodingDeConfiguration = new DifferencesExpansionConfiguration(20, Direction.Horizontal, new HashSet<EmbeddingChanel>(){ EmbeddingChanel.R });
-        private AlgorithmConfiguration currentDecodingDeConfiguration = new DifferencesExpansionConfiguration(20, Direction.Horizontal, new HashSet<EmbeddingChanel>() { EmbeddingChanel.R });
+        private AlgorithmConfiguration activeEncodingDEConfig;
+        private AlgorithmConfiguration activeDecodingDEConfig;
+        private AlgorithmConfiguration standardEncodingDEConfig = new DifferencesExpansionConfiguration(20, Direction.Horizontal, new HashSet<EmbeddingChanel>(){ EmbeddingChanel.R });
+        private AlgorithmConfiguration standardDecodingDEConfig = new DifferencesExpansionConfiguration(20, Direction.Horizontal, new HashSet<EmbeddingChanel>() { EmbeddingChanel.R });
+        private AlgorithmConfiguration bruteForceDecodingDEConfig = new DifferenceExpansionBruteForceConfiguration(new HashSet<EmbeddingChanel>() { EmbeddingChanel.R }, new HashSet<Direction>() { Direction.Horizontal, Direction.Vertical });
         private AlgorithmConfiguration currentEncodingHsConfiguration = new HistogramShiftingConfiguration(false, new HashSet<EmbeddingChanel>() { EmbeddingChanel.R });
         private AlgorithmConfiguration currentDecodingHsConfiguration = new HistogramShiftingConfiguration(true, new HashSet<EmbeddingChanel>() { EmbeddingChanel.R });
         private IReversibleWatermarkingAlgorithm deAlgorithm = new DifferencesExpansionAlgorithm();
@@ -55,6 +59,8 @@ namespace ReversibleSignatureAnalyzer.View
             CbActivityType.SelectedIndex = 0;
             addSignatureController = new AddSignatureController();
             ImportImage(projectDirectory + "/Model/_img/lena.png");
+            activeEncodingDEConfig = standardEncodingDEConfig;
+            activeDecodingDEConfig = standardDecodingDEConfig;
         }
 
         private void BtnImportFile_Click(object sender, RoutedEventArgs e)
@@ -154,7 +160,7 @@ namespace ReversibleSignatureAnalyzer.View
         {
             if (RbAlgorithm1.IsChecked.Value)
             {
-                return currentEncodingDeConfiguration;
+                return activeEncodingDEConfig;
             }
             else if (RbAlgorithm2.IsChecked.Value)
             {
@@ -171,7 +177,7 @@ namespace ReversibleSignatureAnalyzer.View
         {
             if (RbAlgorithm1.IsChecked.Value)
             {
-                return currentDecodingDeConfiguration;
+                return activeDecodingDEConfig;
             }
             else if (RbAlgorithm2.IsChecked.Value)
             {
@@ -245,66 +251,90 @@ namespace ReversibleSignatureAnalyzer.View
         {
             if (isWatermarkingModeSelected())
             {
-                DifferencesExpansionConfiguration config = (DifferencesExpansionConfiguration) currentEncodingDeConfiguration;
-                var dialogBox = new ConfigurationDialogBox.DifferencesExpansionConfiguraitonDialogBox(
-                    config.Threeshold,
-                    config.EmbeddingDirection,
-                    config.EmbeddingChanels)
+                DifferencesExpansionConfiguration config = (DifferencesExpansionConfiguration) standardEncodingDEConfig;
+                var dialogBox = new ConfigurationDialogBox.DifferencesExpansionConfiguraitonDialogBox(config, null, activeEncodingDEConfig)
                 {
                     Owner = this,
                 };
                 dialogBox.ShowDialog();
-                if (dialogBox.DialogResult == true)
+                AlgorithmConfiguration newConfig = GetConfigurationBasedOnDialogBoxResult(dialogBox);
+                if (newConfig != null)
                 {
-                    Direction direction;
-                    Enum.TryParse(dialogBox.cbEmbeddingDirection.Text, out direction);
-                    HashSet<EmbeddingChanel> embeddingChanels = new HashSet<EmbeddingChanel>();
-                    if (dialogBox.cbR.IsChecked == true)
-                    {
-                        embeddingChanels.Add(EmbeddingChanel.R);
-                    }
-                    if (dialogBox.cbG.IsChecked == true)
-                    {
-                        embeddingChanels.Add(EmbeddingChanel.G);
-                    }
-                    if (dialogBox.cbB.IsChecked == true)
-                    {
-                        embeddingChanels.Add(EmbeddingChanel.B);
-                    }
-                    currentEncodingDeConfiguration = new DifferencesExpansionConfiguration(dialogBox.Threshold, direction, embeddingChanels);
+                    standardEncodingDEConfig = newConfig;
+                    activeEncodingDEConfig = standardEncodingDEConfig;
                 }
             }
             if(isAnalyzingModeSelected())
             {
-                DifferencesExpansionConfiguration config = (DifferencesExpansionConfiguration)currentDecodingDeConfiguration;
-                var dialogBox = new ConfigurationDialogBox.DifferencesExpansionConfiguraitonDialogBox(
-                    config.Threeshold,
-                    config.EmbeddingDirection,
-                    config.EmbeddingChanels)
+                DifferencesExpansionConfiguration deConfig = (DifferencesExpansionConfiguration)standardDecodingDEConfig;
+                DifferenceExpansionBruteForceConfiguration deBruteForceConfig = (DifferenceExpansionBruteForceConfiguration)bruteForceDecodingDEConfig;
+                var dialogBox = new ConfigurationDialogBox.DifferencesExpansionConfiguraitonDialogBox(deConfig, deBruteForceConfig, activeDecodingDEConfig)
                 {
                     Owner = this,
                 };
                 dialogBox.ShowDialog();
-                if (dialogBox.DialogResult == true)
+                AlgorithmConfiguration newConfig = GetConfigurationBasedOnDialogBoxResult(dialogBox);
+                if (dialogBox.cbConfigurationType.Text == "Standard" && newConfig != null)
                 {
-                    Direction direction;
-                    Enum.TryParse(dialogBox.cbEmbeddingDirection.Text, out direction);
-                    HashSet<EmbeddingChanel> embeddingChanels = new HashSet<EmbeddingChanel>();
-                    if (dialogBox.cbR.IsChecked == true)
-                    {
-                        embeddingChanels.Add(EmbeddingChanel.R);
-                    }
-                    if (dialogBox.cbG.IsChecked == true)
-                    {
-                        embeddingChanels.Add(EmbeddingChanel.G);
-                    }
-                    if (dialogBox.cbB.IsChecked == true)
-                    {
-                        embeddingChanels.Add(EmbeddingChanel.B);
-                    }
-                    currentDecodingDeConfiguration = new DifferencesExpansionConfiguration(dialogBox.Threshold, direction, embeddingChanels);
+                    standardDecodingDEConfig = newConfig;
+                    activeDecodingDEConfig = standardDecodingDEConfig;
+                }
+                else if(dialogBox.cbConfigurationType.Text == "Brute force" && newConfig != null)
+                {
+                    bruteForceDecodingDEConfig = newConfig;
+                    activeDecodingDEConfig = bruteForceDecodingDEConfig;
                 }
             }
+        }
+
+        private AlgorithmConfiguration GetConfigurationBasedOnDialogBoxResult(DifferencesExpansionConfiguraitonDialogBox dialogBox)
+        {
+            if (dialogBox.DialogResult == true && dialogBox.cbConfigurationType.Text == "Standard")
+            {
+                Direction direction;
+                Enum.TryParse(dialogBox.cbEmbeddingDirection.Text, out direction);
+                HashSet<EmbeddingChanel> embeddingChanels = new HashSet<EmbeddingChanel>();
+                if (dialogBox.cbR.IsChecked == true)
+                {
+                    embeddingChanels.Add(EmbeddingChanel.R);
+                }
+                if (dialogBox.cbG.IsChecked == true)
+                {
+                    embeddingChanels.Add(EmbeddingChanel.G);
+                }
+                if (dialogBox.cbB.IsChecked == true)
+                {
+                    embeddingChanels.Add(EmbeddingChanel.B);
+                }
+                return new DifferencesExpansionConfiguration(dialogBox.Threshold, direction, embeddingChanels);
+            }
+            if (dialogBox.DialogResult == true && dialogBox.cbConfigurationType.Text == "Brute force")
+            {
+                HashSet<Direction> directions = new HashSet<Direction>();
+                if (dialogBox.cbHorizontal_BF.IsChecked == true)
+                {
+                    directions.Add(Direction.Horizontal);
+                }
+                if (dialogBox.cbVertical_BF.IsChecked == true)
+                {
+                    directions.Add(Direction.Vertical);
+                }
+                HashSet<EmbeddingChanel> embeddingChanels = new HashSet<EmbeddingChanel>();
+                if (dialogBox.cbR_BF.IsChecked == true)
+                {
+                    embeddingChanels.Add(EmbeddingChanel.R);
+                }
+                if (dialogBox.cbG_BF.IsChecked == true)
+                {
+                    embeddingChanels.Add(EmbeddingChanel.G);
+                }
+                if (dialogBox.cbB_BF.IsChecked == true)
+                {
+                    embeddingChanels.Add(EmbeddingChanel.B);
+                }
+                return new DifferenceExpansionBruteForceConfiguration(embeddingChanels, directions);
+            }
+            return null;
         }
 
         private void BtnConfigSVD_Click(object sender, RoutedEventArgs e)
