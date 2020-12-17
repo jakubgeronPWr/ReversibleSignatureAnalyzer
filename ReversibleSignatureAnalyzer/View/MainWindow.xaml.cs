@@ -33,8 +33,10 @@ namespace ReversibleSignatureAnalyzer.View
         private BitmapImage importedImage;
         private BitmapImage resultImage;
         private string activityType;
-        private AlgorithmConfiguration currentDeConfiguration = new DifferencesExpansionConfiguration(1, 20, Direction.Horizontal, new HashSet<EmbeddingChanel>(){ EmbeddingChanel.R });
-        private AlgorithmConfiguration currentDeBruteForceConfiguration = new DifferenceExpansionBruteForceConfiguration(1, new HashSet<EmbeddingChanel>() { EmbeddingChanel.R, EmbeddingChanel.G, EmbeddingChanel.B }, new HashSet<Direction>() { Direction.Horizontal, Direction.Vertical });
+        private AlgorithmConfiguration currentEncodingDeConfiguration = new DifferencesExpansionConfiguration(20, Direction.Horizontal, new HashSet<EmbeddingChanel>(){ EmbeddingChanel.R });
+        private AlgorithmConfiguration currentDecodingDeConfiguration = new DifferencesExpansionConfiguration(20, Direction.Horizontal, new HashSet<EmbeddingChanel>() { EmbeddingChanel.R });
+        private AlgorithmConfiguration currentEncodingHsConfiguration = new HistogramShiftingConfiguration(false, new HashSet<EmbeddingChanel>() { EmbeddingChanel.R });
+        private AlgorithmConfiguration currentDecodingHsConfiguration = new HistogramShiftingConfiguration(true, new HashSet<EmbeddingChanel>() { EmbeddingChanel.R });
         private IReversibleWatermarkingAlgorithm deAlgorithm = new DifferencesExpansionAlgorithm();
         private IReversibleWatermarkingAlgorithm dwtDctSvdAlgotithm = new DwtDctSvdAlgorithm();
         private IReversibleWatermarkingAlgorithm hsAlgorithm = new HistogramShiftingAlgorithm();
@@ -67,17 +69,14 @@ namespace ReversibleSignatureAnalyzer.View
         {
             Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
             dlg.DefaultExt = ".png";
-            dlg.Filter =
-                "PNG Filses (*.png)|*.png|JPG Files (*.jpg)|*.jpg|GIF Files (*.gif)|*.gif|JPEG Files (*.jpeg)|*.jpeg";
+            dlg.Filter = "PNG Filses (*.png)|*.png|JPG Files (*.jpg)|*.jpg|GIF Files (*.gif)|*.gif|JPEG Files (*.jpeg)|*.jpeg";
             Nullable<bool> result = dlg.ShowDialog();
-
             if (result.HasValue && result.Value)
             {
                 isFileLoaded = true;
                 string fileName = dlg.FileName;
                 ImportImage(fileName);
             }
-
         }
 
         private void ImportImage(string fileName)
@@ -94,15 +93,15 @@ namespace ReversibleSignatureAnalyzer.View
         {
             var secretPayload = GetTextFromRichTextBox(TvPayload);
             IReversibleWatermarkingAlgorithm selectedAlgorithm = GetSelectedAlgorithm();
-            AlgorithmConfiguration configuration = GetConfigurationForSelectedAlgorithm();
-            if (isFileLoaded && CbActivityType.Text == TbAdd.Content.ToString())
+
+            if (isFileLoaded && isWatermarkingModeSelected())
             {
-                resultImage = addSignatureController.GetWatermarkedImage(importedImage, secretPayload, selectedAlgorithm, configuration);
+                resultImage = addSignatureController.GetWatermarkedImage(importedImage, secretPayload, selectedAlgorithm, GetEncodingConfigurationForSelectedAlgorithm());
             }
 
-            if (isFileLoaded && CbActivityType.Text == TbAnalyze.Content.ToString())
+            if (isFileLoaded && isAnalyzingModeSelected())
             {
-                Tuple<BitmapImage, string> imageAndPayload = addSignatureController.GetDecodedImage(importedImage, selectedAlgorithm, configuration);
+                Tuple<BitmapImage, string> imageAndPayload = addSignatureController.GetDecodedImage(importedImage, selectedAlgorithm, GetDecodingConfigurationForSelectedAlgorithm());
                 resultImage = imageAndPayload.Item1;
                 SetTextRichTextBox(TvPayload, imageAndPayload.Item2);
             }
@@ -113,12 +112,19 @@ namespace ReversibleSignatureAnalyzer.View
             TvExportFileName.Visibility = Visibility.Visible;
         }
 
+        private bool isWatermarkingModeSelected()
+        {
+            return CbActivityType.Text == TbAdd.Content.ToString();
+        }
+
+        private bool isAnalyzingModeSelected()
+        {
+            return CbActivityType.Text == TbAnalyze.Content.ToString();
+        }
+
         private string GetTextFromRichTextBox(RichTextBox rtb)
         {
-            TextRange tr = new TextRange(
-                rtb.Document.ContentStart,
-                rtb.Document.ContentEnd
-                );
+            TextRange tr = new TextRange(rtb.Document.ContentStart,rtb.Document.ContentEnd);
             return tr.Text;
         }
 
@@ -145,22 +151,36 @@ namespace ReversibleSignatureAnalyzer.View
             throw new Exception("No algorithm selected");
         }
 
-        private AlgorithmConfiguration GetConfigurationForSelectedAlgorithm()
+        private AlgorithmConfiguration GetEncodingConfigurationForSelectedAlgorithm()
         {
             if (RbAlgorithm1.IsChecked.Value)
             {
-                return currentDeConfiguration;
+                return currentEncodingDeConfiguration;
             }
             else if (RbAlgorithm2.IsChecked.Value)
             {
-                return currentDeConfiguration;
+                return null;
             }
             else if (RbAlgorithm3.IsChecked.Value)
             {
-                if (currentDeConfiguration is HistogramShiftingConfiguration)
-                    return currentDeConfiguration;
-                else
-                    return new HistogramShiftingConfiguration(1, false, currentDeConfiguration.EmbeddingChanels);
+                return currentEncodingHsConfiguration;
+            }
+            throw new Exception("No algorithm selected");
+        }
+
+        private AlgorithmConfiguration GetDecodingConfigurationForSelectedAlgorithm()
+        {
+            if (RbAlgorithm1.IsChecked.Value)
+            {
+                return currentDecodingDeConfiguration;
+            }
+            else if (RbAlgorithm2.IsChecked.Value)
+            {
+                return null;
+            }
+            else if (RbAlgorithm3.IsChecked.Value)
+            {
+                return currentDecodingHsConfiguration;
             }
             throw new Exception("No algorithm selected");
         }
@@ -218,57 +238,21 @@ namespace ReversibleSignatureAnalyzer.View
 
         private void BtnConfigDE_Click(object sender, RoutedEventArgs e)
         {
-            DifferencesExpansionConfiguration config = (DifferencesExpansionConfiguration) currentDeConfiguration;
-            var dialogBox = new ConfigurationDialogBox.DifferencesExpansionConfiguraitonDialogBox(
-                config.Iterations,
-                config.Threeshold,
-                config.EmbeddingDirection,
-                config.EmbeddingChanels)
+            if (isWatermarkingModeSelected())
             {
-                Owner = this,
-            };
-            dialogBox.ShowDialog();
-            if (dialogBox.DialogResult == true)
-            {
-                Direction direction;
-                Enum.TryParse(dialogBox.cbEmbeddingDirection.Text, out direction);
-                HashSet<EmbeddingChanel> embeddingChanels = new HashSet<EmbeddingChanel>();
-                if (dialogBox.cbR.IsChecked == true)
+                DifferencesExpansionConfiguration config = (DifferencesExpansionConfiguration) currentEncodingDeConfiguration;
+                var dialogBox = new ConfigurationDialogBox.DifferencesExpansionConfiguraitonDialogBox(
+                    config.Threeshold,
+                    config.EmbeddingDirection,
+                    config.EmbeddingChanels)
                 {
-                    embeddingChanels.Add(EmbeddingChanel.R);
-                }
-                if (dialogBox.cbG.IsChecked == true)
+                    Owner = this,
+                };
+                dialogBox.ShowDialog();
+                if (dialogBox.DialogResult == true)
                 {
-                    embeddingChanels.Add(EmbeddingChanel.G);
-                }
-                if (dialogBox.cbB.IsChecked == true)
-                {
-                    embeddingChanels.Add(EmbeddingChanel.B);
-                }
-                currentDeConfiguration = new DifferencesExpansionConfiguration(dialogBox.IterationsNumber, dialogBox.Threshold, direction, embeddingChanels);
-            }
-        }
-
-        private void BtnConfigSVD_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void BtnConfigHS_Click(object sender, RoutedEventArgs e)
-        {
-            HashSet<EmbeddingChanel> set = new HashSet<EmbeddingChanel>();
-            set.Add(EmbeddingChanel.R);
-            HistogramShiftingConfiguration config = new HistogramShiftingConfiguration(1, false, set);
-            var dialogBox = new ConfigurationDialogBox.HistogramShiftingConfiguraitonDialogBox(
-                config.EmbeddingChanels)
-            {
-                Owner = this,
-            };
-            dialogBox.ShowDialog();
-            if (dialogBox.DialogResult == true)
-            {
-                if (dialogBox.cbR.IsChecked == true)
-                {
+                    Direction direction;
+                    Enum.TryParse(dialogBox.cbEmbeddingDirection.Text, out direction);
                     HashSet<EmbeddingChanel> embeddingChanels = new HashSet<EmbeddingChanel>();
                     if (dialogBox.cbR.IsChecked == true)
                     {
@@ -282,10 +266,118 @@ namespace ReversibleSignatureAnalyzer.View
                     {
                         embeddingChanels.Add(EmbeddingChanel.B);
                     }
-                    currentDeConfiguration = new HistogramShiftingConfiguration(1, dialogBox.cbBruteforce.IsChecked == true, embeddingChanels);
+                    currentEncodingDeConfiguration = new DifferencesExpansionConfiguration(dialogBox.Threshold, direction, embeddingChanels);
+                }
+            }
+            if(isAnalyzingModeSelected())
+            {
+                DifferencesExpansionConfiguration config = (DifferencesExpansionConfiguration)currentDecodingDeConfiguration;
+                var dialogBox = new ConfigurationDialogBox.DifferencesExpansionConfiguraitonDialogBox(
+                    config.Threeshold,
+                    config.EmbeddingDirection,
+                    config.EmbeddingChanels)
+                {
+                    Owner = this,
+                };
+                dialogBox.ShowDialog();
+                if (dialogBox.DialogResult == true)
+                {
+                    Direction direction;
+                    Enum.TryParse(dialogBox.cbEmbeddingDirection.Text, out direction);
+                    HashSet<EmbeddingChanel> embeddingChanels = new HashSet<EmbeddingChanel>();
+                    if (dialogBox.cbR.IsChecked == true)
+                    {
+                        embeddingChanels.Add(EmbeddingChanel.R);
+                    }
+                    if (dialogBox.cbG.IsChecked == true)
+                    {
+                        embeddingChanels.Add(EmbeddingChanel.G);
+                    }
+                    if (dialogBox.cbB.IsChecked == true)
+                    {
+                        embeddingChanels.Add(EmbeddingChanel.B);
+                    }
+                    currentDecodingDeConfiguration = new DifferencesExpansionConfiguration(dialogBox.Threshold, direction, embeddingChanels);
                 }
             }
         }
 
+        private void BtnConfigSVD_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void BtnConfigHS_Click(object sender, RoutedEventArgs e)
+        {
+            if(isWatermarkingModeSelected())
+            {
+                HashSet<EmbeddingChanel> set = new HashSet<EmbeddingChanel>();
+                set.Add(EmbeddingChanel.R);
+                HistogramShiftingConfiguration config = new HistogramShiftingConfiguration(false, set);
+                var dialogBox = new ConfigurationDialogBox.HistogramShiftingConfiguraitonDialogBox(
+                    config.EmbeddingChanels)
+                {
+                    Owner = this,
+                };
+                dialogBox.ShowDialog();
+                if (dialogBox.DialogResult == true)
+                {
+                    if (dialogBox.cbR.IsChecked == true)
+                    {
+                        HashSet<EmbeddingChanel> embeddingChanels = new HashSet<EmbeddingChanel>();
+                        if (dialogBox.cbR.IsChecked == true)
+                        {
+                            embeddingChanels.Add(EmbeddingChanel.R);
+                        }
+                        if (dialogBox.cbG.IsChecked == true)
+                        {
+                            embeddingChanels.Add(EmbeddingChanel.G);
+                        }
+                        if (dialogBox.cbB.IsChecked == true)
+                        {
+                            embeddingChanels.Add(EmbeddingChanel.B);
+                        }
+                        currentEncodingHsConfiguration = new HistogramShiftingConfiguration(dialogBox.cbBruteforce.IsChecked == true, embeddingChanels);
+                    }
+                }
+            }
+            if(isAnalyzingModeSelected())
+            {
+                HashSet<EmbeddingChanel> set = new HashSet<EmbeddingChanel>();
+                set.Add(EmbeddingChanel.R);
+                HistogramShiftingConfiguration config = new HistogramShiftingConfiguration(false, set);
+                var dialogBox = new ConfigurationDialogBox.HistogramShiftingConfiguraitonDialogBox(
+                    config.EmbeddingChanels)
+                {
+                    Owner = this,
+                };
+                dialogBox.ShowDialog();
+                if (dialogBox.DialogResult == true)
+                {
+                    if (dialogBox.cbR.IsChecked == true)
+                    {
+                        HashSet<EmbeddingChanel> embeddingChanels = new HashSet<EmbeddingChanel>();
+                        if (dialogBox.cbR.IsChecked == true)
+                        {
+                            embeddingChanels.Add(EmbeddingChanel.R);
+                        }
+                        if (dialogBox.cbG.IsChecked == true)
+                        {
+                            embeddingChanels.Add(EmbeddingChanel.G);
+                        }
+                        if (dialogBox.cbB.IsChecked == true)
+                        {
+                            embeddingChanels.Add(EmbeddingChanel.B);
+                        }
+                        currentDecodingHsConfiguration = new HistogramShiftingConfiguration(dialogBox.cbBruteforce.IsChecked == true, embeddingChanels);
+                    }
+                }
+            }
+        }
+
+        private void TvPayload_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
+        }
     }
 }

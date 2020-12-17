@@ -8,7 +8,7 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DifferenceExpansion
     public class DifferenceExpansionBruteForceConfiguration : AlgorithmConfiguration
     {
         public HashSet<Direction> EmbeddingDirections { get; set; }
-        public DifferenceExpansionBruteForceConfiguration(int iterations, HashSet<EmbeddingChanel> embeddingChanels, HashSet<Direction> embeddingDirections) : base(iterations, embeddingChanels)
+        public DifferenceExpansionBruteForceConfiguration(HashSet<EmbeddingChanel> embeddingChanels, HashSet<Direction> embeddingDirections) : base(embeddingChanels)
         {
             this.EmbeddingDirections = embeddingDirections;
         }

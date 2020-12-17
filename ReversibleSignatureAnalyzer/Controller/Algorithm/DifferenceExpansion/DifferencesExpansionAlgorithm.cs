@@ -17,24 +17,13 @@ namespace ReversibleSignatureAnalyzer.Model
         {
             DifferencesExpansionConfiguration config = (DifferencesExpansionConfiguration) configuration;
             Bitmap image = new Bitmap(inputImage);
-            Direction currentEmbeddingDirection = config.EmbeddingDirection;
-            for (int i = 0; i < config.Iterations; i++)
-            {
-                List<string> payloadChunks = GetPayloadChunks(payload, config.EmbeddingChanels);
-                int chunkNumber = 0;
-                if (config.EmbeddingChanels.Contains(EmbeddingChanel.R))
+            List<string> payloadChunks = GetPayloadChunks(payload, config.EmbeddingChanels);
+            int chunkNumber = 0;
+            foreach(EmbeddingChanel embeddingChanel in Enum.GetValues(typeof(EmbeddingChanel))) {
+                if (config.EmbeddingChanels.Contains(embeddingChanel))
                 {
-                    EncodePayloadIntoImage(image, payloadChunks[chunkNumber++], currentEmbeddingDirection, config.Threeshold, EmbeddingChanel.R);
+                    EncodePayloadIntoImage(image, payloadChunks[chunkNumber++], config.EmbeddingDirection, config.Threeshold, embeddingChanel);
                 }
-                if (config.EmbeddingChanels.Contains(EmbeddingChanel.G))
-                {
-                    EncodePayloadIntoImage(image, payloadChunks[chunkNumber++], currentEmbeddingDirection, config.Threeshold, EmbeddingChanel.G);
-                }
-                if (config.EmbeddingChanels.Contains(EmbeddingChanel.B))
-                {
-                    EncodePayloadIntoImage(image, payloadChunks[chunkNumber++], currentEmbeddingDirection, config.Threeshold, EmbeddingChanel.B);
-                }
-                currentEmbeddingDirection = GetChangedEmbeddingDirection(currentEmbeddingDirection);
             }
             return image;
         }
@@ -380,26 +369,14 @@ namespace ReversibleSignatureAnalyzer.Model
         {
             try
             {
-                Direction currentEmbeddingDirection = config.EmbeddingDirection;
-                string payload = "";
-                for (int i = 0; i < config.Iterations; i++)
-                {
-                    List<string> payloadChunks = new List<string>();
-                    if (config.EmbeddingChanels.Contains(EmbeddingChanel.R))
+                List<string> payloadChunks = new List<string>();
+                foreach(EmbeddingChanel embeddingChanel in Enum.GetValues(typeof(EmbeddingChanel))) {
+                    if (config.EmbeddingChanels.Contains(embeddingChanel))
                     {
-                        payloadChunks.Add(DecodeImage(image, currentEmbeddingDirection, EmbeddingChanel.R));
+                        payloadChunks.Add(DecodeImage(image, config.EmbeddingDirection, embeddingChanel));
                     }
-                    if (config.EmbeddingChanels.Contains(EmbeddingChanel.G))
-                    {
-                        payloadChunks.Add(DecodeImage(image, currentEmbeddingDirection, EmbeddingChanel.G));
-                    }
-                    if (config.EmbeddingChanels.Contains(EmbeddingChanel.B))
-                    {
-                        payloadChunks.Add(DecodeImage(image, currentEmbeddingDirection, EmbeddingChanel.B));
-                    }
-                    currentEmbeddingDirection = GetChangedEmbeddingDirection(currentEmbeddingDirection);
-                    payload = String.Join("", payloadChunks);
                 }
+                string payload = String.Join("", payloadChunks);
                 return new Tuple<Bitmap, string>(image, payload);
             }
             catch

@@ -10,12 +10,10 @@ namespace ConfigurationDialogBox
 {
     public partial class DifferencesExpansionConfiguraitonDialogBox : Window
     {
-        public DifferencesExpansionConfiguraitonDialogBox(int iterationsNumber, int threshold, Direction embeddingDirection, HashSet<EmbeddingChanel> embeddingChanels)
+        public DifferencesExpansionConfiguraitonDialogBox(int threshold, Direction embeddingDirection, HashSet<EmbeddingChanel> embeddingChanels)
         {
             InitializeComponent();
-            this.iterationsNumber = iterationsNumber;
             this.threshold = threshold;
-            tbIterations.Text = iterationsNumber.ToString();
             tbThreshold.Text = threshold.ToString();
             cbEmbeddingDirection.SelectedIndex = (int) embeddingDirection;
             cbR.IsChecked = embeddingChanels.Contains(EmbeddingChanel.R);
@@ -60,44 +58,6 @@ namespace ConfigurationDialogBox
             return LogicalTreeHelper.GetChildren(node).OfType<DependencyObject>().All(IsValid);
         }
 
-        private int iterationsNumber = 1;
-
-        public int IterationsNumber
-        {
-            get { return iterationsNumber; }
-            set
-            {
-                iterationsNumber = value;
-                tbIterations.Text = value.ToString();
-            }
-        }
-
-        private void cmdUp_Click(object sender, RoutedEventArgs e)
-        {
-            //IterationsNumber++;
-        }
-
-        private void cmdDown_Click(object sender, RoutedEventArgs e)
-        {
-            if (iterationsNumber > 1)
-            {
-                //IterationsNumber--;
-            }     
-        }
-
-        private void txtNum_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (tbIterations == null)
-            {
-                return;
-            }
-            if (!int.TryParse(tbIterations.Text, out iterationsNumber))
-            {
-                iterationsNumber = 1;
-                tbIterations.Text = iterationsNumber.ToString();
-            }
-        }
-
         private int threshold = 1;
 
         public int Threshold
@@ -131,7 +91,6 @@ namespace ConfigurationDialogBox
             }
             if (!int.TryParse(tbThreshold.Text, out threshold))
             {
-                iterationsNumber = 1;
                 tbThreshold.Text = threshold.ToString();
             }
         }
