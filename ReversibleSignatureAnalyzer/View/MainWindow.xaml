@@ -9,30 +9,31 @@
         " Height="720" Width="1280" Background="Black" Margin="0,0,0,0" VerticalContentAlignment="Center" Padding="15,13,15,15" HorizontalContentAlignment="Center" Grid.IsSharedSizeScope="True">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="2*"/>
-            <RowDefinition Height="2*"/>
+            <RowDefinition Height="21*"/>
+            <RowDefinition Height="67*"/>
+            <RowDefinition Height="88*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*"/>
             <ColumnDefinition Width="4*"/>
         </Grid.ColumnDefinitions>
 
-        <ComboBox x:Name="CbActivityType" Height="45" Margin="15,15,0,0" VerticalAlignment="Top" FontSize="24" FontWeight="Bold" SelectionChanged="CbActivityType_selectionChanged">
+        <ComboBox x:Name="CbActivityType" Height="45" Margin="15,15,0,0" VerticalAlignment="Top" FontSize="24" FontWeight="Bold" SelectionChanged="CbActivityType_SelectionChanged">
             <ComboBoxItem  Name="TbAdd" Content="Add Watermark" />
             <ComboBoxItem Name="TbAnalyze" Content="Analyze Image"/>
         </ComboBox>
 
-        <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="0,15,0,0" Height="40">
-            <Button x:Name="BtnImportFile" Content="Import" HorizontalAlignment="Left" Margin="15,0,0,0" VerticalAlignment="Bottom" FontWeight="Bold" FontSize="18" Background="#FF959595" Foreground="White" Click="BtnImportFile_Click" Height="40" Width="90"/>
-            <TextBox x:Name="TvImportFilePath" Margin="5,0,0,0" Text="import file path" TextWrapping="Wrap" VerticalAlignment="Stretch" IsEnabled="True" Width="316" ScrollViewer.VerticalScrollBarVisibility="Auto" Background="#FFACACAC"/>
-        </StackPanel>
+        <DockPanel Grid.Row="2" Grid.Column="0"  VerticalAlignment="Top" Margin="0,15,0,0" Height="40">
+            <Button x:Name="BtnImportFile" Content="Import" HorizontalAlignment="Left" Margin="15,0,5,0" VerticalAlignment="Bottom" FontWeight="Bold" FontSize="18" Background="#FF959595" Foreground="White" Click="BtnImportFile_Click" Height="40" Width="90"/>
+            <TextBox x:Name="TvImportFilePath" Margin="0,0,0,0" Text="import file path" TextWrapping="Wrap" VerticalAlignment="Stretch" IsEnabled="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Background="#FFACACAC"/>
+        </DockPanel>
 
-        <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Margin="0,0,0,30">
-            <Button x:Name="BtnExportFile" Content="Export" HorizontalAlignment="Center" Margin="15,0,0,0" VerticalAlignment="Stretch" FontWeight="Bold" FontSize="18" Background="#FF959595" Foreground="White" Height="40" Width="90" Click="BtnExportFile_Click"/>
-            <TextBox x:Name="TvExportFileName" Margin="5,0,30,0" Text="export file path" TextWrapping="Wrap" VerticalAlignment="Stretch" Width="316"/>
-        </StackPanel>
+        <DockPanel Grid.Row="2" Grid.Column="0" VerticalAlignment="Top" Margin="0,220,0,0">
+            <Button x:Name="BtnExportFile" Content="Export" HorizontalAlignment="Center" Margin="15,0,5,0" VerticalAlignment="Stretch" FontWeight="Bold" FontSize="18" Background="#FF959595" Foreground="White" Height="40" Width="90" Click="BtnExportFile_Click" Visibility="Collapsed"/>
+            <TextBox x:Name="TvExportFileName" Margin="0,0,0,0" Text="export file path" TextWrapping="Wrap" Visibility="Collapsed"/>
+        </DockPanel>
 
-        <GroupBox Header="Algorithm" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Top" Foreground="White" Margin="15,75,0,0" >
+        <GroupBox Header="Algorithm" Grid.Row="0" Grid.Column="0" VerticalAlignment="Top" Foreground="White" Margin="15,75,0,0" Grid.RowSpan="2" >
             <StackPanel>
                 <RadioButton GroupName ="algorithm_type" x:Name="RbAlgorithm1" Content="Difference expansion" HorizontalAlignment="Left" Margin="15,15,0,0" Grid.Row="1" VerticalAlignment="Top" Foreground="White" FontSize="16" Grid.ColumnSpan="2" Height="25"/>
                 <RadioButton GroupName ="algorithm_type" x:Name="RbAlgorithm2" Content="DwtDctSvd" HorizontalAlignment="Left" Margin="15,15,0,0" Grid.Row="1" VerticalAlignment="Top" Foreground="White" FontSize="16" Grid.ColumnSpan="2" Height="25"/>
@@ -41,23 +42,23 @@
             </StackPanel>
         </GroupBox>
 
-        <Button x:Name="BtnRun" Content="RUN" Grid.Row="1" Grid.Column="0" VerticalAlignment="Top" Height="40" Background="#FFA41515" Panel.ZIndex="-4" FontSize="18" FontWeight="Bold" Foreground="White" Margin="15,85,0,0" Click="BtnRun_Click" />
-        <RichTextBox x:Name="TvPayload" Height="64" Margin="15,128,0,0" Grid.Row="1" VerticalAlignment="Top" TextChanged="TvPayload_TextChanged">
+        <Button x:Name="BtnRun" Content="RUN" Grid.Row="2" Grid.Column="0" VerticalAlignment="Top" Height="40" Background="#FFA41515" Panel.ZIndex="-4" FontSize="18" FontWeight="Bold" Foreground="White" Margin="15,85,0,0" Click="BtnRun_Click" />
+        <RichTextBox x:Name="TvPayload" Height="64" Margin="15,130,0,0" Grid.Row="2" VerticalAlignment="Top" TextChanged="TvPayload_TextChanged" Visibility="Collapsed">
             <FlowDocument>
                 <Paragraph>
-                    <Run Text="Your message to hide..."/>
+                    <Run Text="Type in your payload"/>
                 </Paragraph>
             </FlowDocument>
         </RichTextBox>
 
-        <TextBox Name="TvOperationResult" Margin="15,215,0,0" Text="-" TextWrapping="Wrap" VerticalAlignment="Top" Grid.Row="1" Height="25" Background="White" FontSize="16" Foreground="Black" FontWeight="Bold" IsEnabled="False" BorderBrush="White" SelectionBrush="{x:Null}" Visibility="Visible"/>
+        <TextBox Name="TvOperationResult" Margin="15,264,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Grid.Row="2" Height="25" Background="White" FontSize="16" Foreground="Black" FontWeight="Bold" IsEnabled="False" BorderBrush="White" SelectionBrush="{x:Null}" Visibility="Collapsed" TextAlignment="Center"/>
 
-        <Image x:Name="ImgImport" Grid.Column="1" HorizontalAlignment="Stretch" Margin="15,15,15,15" Grid.Row="0" VerticalAlignment="Stretch"/>
-        <Image x:Name="ImgExport" Grid.Column="1" HorizontalAlignment="Stretch" Margin="15,15,15,15" Grid.Row="1"/>
-        <Border BorderThickness="2" BorderBrush="White" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Stretch" Margin="15,15,15,15" VerticalAlignment="Stretch"/>
-        <Border BorderThickness="2" BorderBrush="White" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" Margin="15,15,15,15" VerticalAlignment="Stretch"/>
-        <Button x:Name="BtnConfigureDE" Content="Configuration" Grid.Column="0" VerticalAlignment="Top" Height="18" Background="#FF959595" Panel.ZIndex="0" FontSize="11" FontWeight="Bold" Foreground="White" Margin="265,105,0,0" Click="BtnConfigDE_Click" HorizontalAlignment="Left" Width="130" />
-        <Button x:Name="BtnConfigureSVD" Content="Configuration" Grid.Column="0" VerticalAlignment="Top" Height="18" Background="#FF959595" Panel.ZIndex="0" FontSize="11" FontWeight="Bold" Foreground="White" Margin="265,146,0,0" Click="BtnConfigSVD_Click" HorizontalAlignment="Left" Width="130" />
-        <Button x:Name="BtnConfigureHS" Content="Configuration" Grid.Column="0" VerticalAlignment="Top" Height="18" Background="#FF959595" Panel.ZIndex="0" FontSize="11" FontWeight="Bold" Foreground="White" Margin="265,188,0,0" Click="BtnConfigHS_Click" HorizontalAlignment="Left" Width="130" />
+        <Image x:Name="ImgImport" Grid.Column="1" Margin="15,15,15,15" Grid.Row="0" Grid.RowSpan="2"/>
+        <Image x:Name="ImgExport" Grid.Column="1" Margin="15,15,15,15" Grid.Row="2"/>
+        <Border BorderThickness="2" BorderBrush="White" Grid.Column="1" Grid.Row="0" Margin="15,15,15,15" Grid.RowSpan="2"/>
+        <Border BorderThickness="2" BorderBrush="White" Grid.Column="1" Grid.Row="2" Margin="15,15,15,15"/>
+        <Button x:Name="BtnConfigureDE" Content="Configuration" Grid.Column="0" VerticalAlignment="Top" Height="18" Background="#FF959595" Panel.ZIndex="0" FontSize="11" FontWeight="Bold" Foreground="White" Margin="265,21,0,0" Click="BtnConfigDE_Click" HorizontalAlignment="Left" Width="130" Grid.Row="1" />
+        <Button x:Name="BtnConfigureSVD" Content="Configuration" Grid.Column="0" VerticalAlignment="Top" Height="18" Background="#FF959595" Panel.ZIndex="0" FontSize="11" FontWeight="Bold" Foreground="White" Margin="265,62,0,0" Click="BtnConfigSVD_Click" HorizontalAlignment="Left" Width="130" Grid.Row="1" />
+        <Button x:Name="BtnConfigureHS" Content="Configuration" Grid.Column="0" VerticalAlignment="Top" Height="18" Background="#FF959595" Panel.ZIndex="0" FontSize="11" FontWeight="Bold" Foreground="White" Margin="265,104,0,0" Click="BtnConfigHS_Click" HorizontalAlignment="Left" Width="130" Grid.Row="1" />
     </Grid>
 </Window>

@@ -33,7 +33,6 @@ namespace ReversibleSignatureAnalyzer.View
         private bool isFileLoaded = true;
         private BitmapImage importedImage;
         private BitmapImage resultImage;
-        private string activityType;
         private AlgorithmConfiguration currentEncodingDeConfiguration = new DifferencesExpansionConfiguration(20, Direction.Horizontal, new HashSet<EmbeddingChanel>(){ EmbeddingChanel.R });
         private AlgorithmConfiguration currentDecodingDeConfiguration = new DifferencesExpansionConfiguration(20, Direction.Horizontal, new HashSet<EmbeddingChanel>() { EmbeddingChanel.R });
         private AlgorithmConfiguration currentEncodingHsConfiguration = new HistogramShiftingConfiguration(false, new HashSet<EmbeddingChanel>() { EmbeddingChanel.R });
@@ -47,14 +46,7 @@ namespace ReversibleSignatureAnalyzer.View
         public MainWindow()
         {
             InitializeComponent();
-            HideStartUp();
             SetStartup();
-        }
-
-        private void HideStartUp()
-        {
-            BtnExportFile.Visibility = Visibility.Collapsed;
-            TvExportFileName.Visibility = Visibility.Collapsed;
         }
 
         private void SetStartup()
@@ -62,9 +54,7 @@ namespace ReversibleSignatureAnalyzer.View
             RbAlgorithm1.IsChecked = true;
             CbActivityType.SelectedIndex = 0;
             addSignatureController = new AddSignatureController();
-            RbAlgorithm1.IsChecked = true;
             ImportImage(projectDirectory + "/Model/_img/lena.png");
-            activityType = CbActivityType.Text;
         }
 
         private void BtnImportFile_Click(object sender, RoutedEventArgs e)
@@ -87,7 +77,7 @@ namespace ReversibleSignatureAnalyzer.View
             importedImage = new BitmapImage(new Uri(fileName));
             ImgImport.Source = importedImage;
             ImgExport.Source = null;
-            SetTextRichTextBox(TvPayload, "Place for payload");
+            SetTextRichTextBox(TvPayload, "Type in your payload");
             TvExportFileName.Text = "";
         }
 
@@ -106,6 +96,7 @@ namespace ReversibleSignatureAnalyzer.View
                 Tuple<BitmapImage, string> imageAndPayload = addSignatureController.GetDecodedImage(importedImage, selectedAlgorithm, GetDecodingConfigurationForSelectedAlgorithm());
                 resultImage = imageAndPayload.Item1;
                 SetTextRichTextBox(TvPayload, imageAndPayload.Item2);
+                TvPayload.Visibility = Visibility.Visible;
             }
 
             ImgExport.Source = resultImage;
@@ -114,17 +105,7 @@ namespace ReversibleSignatureAnalyzer.View
             TvExportFileName.Visibility = Visibility.Visible;
         }
 
-        private void CbActivityType_selectionChanged (object sender, RoutedEventArgs e) // Hide/Display option to bruteforce all, depeding on context
-        {
-            if (CbActivityType.Text == TbAnalyze.Content.ToString())
-            {
-                RbAlgorithm4.Visibility = Visibility.Collapsed;
-            }
-            else if (CbActivityType.Text == TbAdd.Content.ToString())
-            {
-                RbAlgorithm4.Visibility = Visibility.Visible;
-            }
-        }
+        
 
         private bool isWatermarkingModeSelected()
         {
@@ -230,12 +211,14 @@ namespace ReversibleSignatureAnalyzer.View
 
         private void OperationSuccessNotify(string msg)
         {
+            TvOperationResult.Visibility = Visibility.Visible;
             TvOperationResult.Text = $"{SUCCESS} {msg}";
             TvOperationResult.Foreground = Brushes.ForestGreen;
         }
 
         private void OperationErrorNotify(string msg)
         {
+            TvOperationResult.Visibility = Visibility.Visible;
             TvOperationResult.Text = msg;
             TvOperationResult.Foreground = Brushes.Red;
         }
@@ -400,6 +383,31 @@ namespace ReversibleSignatureAnalyzer.View
         private void TvPayload_TextChanged(object sender, TextChangedEventArgs e)
         {
 
+        }
+
+
+        private void CbActivityType_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (CbActivityType.SelectedItem != null)
+            {
+                string selection = (e.AddedItems[0] as ComboBoxItem).Content as string;
+                if (selection == TbAdd.Content.ToString())
+                {
+                    SetTextRichTextBox(TvPayload, "Type in your payload");
+                    TvPayload.Visibility = Visibility.Visible;
+                    RbAlgorithm4.Visibility = Visibility.Collapsed;
+                }
+                if (selection == TbAnalyze.Content.ToString())
+                {
+                    SetTextRichTextBox(TvPayload, "");
+                    TvPayload.Visibility = Visibility.Collapsed;
+                    RbAlgorithm4.Visibility = Visibility.Visible;
+                }
+                TvOperationResult.Visibility = Visibility.Collapsed;
+                BtnExportFile.Visibility = Visibility.Collapsed;
+                TvExportFileName.Visibility = Visibility.Collapsed;
+                TvExportFileName.Text = "";
+            }
         }
     }
 }
