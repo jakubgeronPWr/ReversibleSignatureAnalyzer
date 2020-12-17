@@ -18,7 +18,7 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.GlobalDecoding
             HistogramShiftingAlgorithm hs = new HistogramShiftingAlgorithm();
             // Algorithm configs
             DifferenceExpansionBruteForceConfiguration deConfig = new DifferenceExpansionBruteForceConfiguration(
-                new HashSet<EmbeddingChanel>() { EmbeddingChanel.R }, new HashSet<Direction>() { Direction.Horizontal }); // Needs to be modified somehow, TO DO!
+                new HashSet<EmbeddingChanel>() { EmbeddingChanel.R, EmbeddingChanel.G, EmbeddingChanel.B }, new HashSet<Direction>() { Direction.Horizontal, Direction.Vertical });
             HistogramShiftingConfiguration hsConfig = new HistogramShiftingConfiguration(true, 
                 new HashSet<EmbeddingChanel>() { EmbeddingChanel.R, EmbeddingChanel.G, EmbeddingChanel.B });
             // Decoding
