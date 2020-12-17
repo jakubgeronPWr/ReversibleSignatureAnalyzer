@@ -38,6 +38,7 @@
                 <RadioButton GroupName ="algorithm_type" x:Name="RbAlgorithm1" Content="Difference expansion" HorizontalAlignment="Left" Margin="15,15,0,0" Grid.Row="1" VerticalAlignment="Top" Foreground="White" FontSize="16" Grid.ColumnSpan="2" Height="25"/>
                 <RadioButton GroupName ="algorithm_type" x:Name="RbAlgorithm2" Content="DwtDctSvd" HorizontalAlignment="Left" Margin="15,15,0,0" Grid.Row="1" VerticalAlignment="Top" Foreground="White" FontSize="16" Grid.ColumnSpan="2" Height="25"/>
                 <RadioButton GroupName ="algorithm_type" x:Name="RbAlgorithm3" Content="Histogram Shifting" HorizontalAlignment="Left" Margin="15,15,0,0" Grid.Row="1" VerticalAlignment="Top" Foreground="White" FontSize="16" Grid.ColumnSpan="2" Height="25"/>
+                <RadioButton GroupName ="algorithm_type" x:Name="RbAlgorithm4" Content="Bruteforce All Algorithms" HorizontalAlignment="Left" Margin="15,15,0,0" Grid.Row="1" VerticalAlignment="Top" Foreground="White" FontSize="16" Grid.ColumnSpan="2" Height="25" Visibility="Collapsed"/>
             </StackPanel>
         </GroupBox>
 

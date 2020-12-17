@@ -616,7 +616,7 @@ namespace ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting
         {
             var conf = (HistogramShiftingConfiguration)algorithmConfiguration;
             if (!conf.bruteforce)
-            {
+            {   // Standard decoding
                 Bitmap originalImage;
                 string payload;
 

@@ -23,4 +23,16 @@
     <Folder Include="Model\_img\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="View\HSConfigDecodingDialogBox.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="View\HSConfigDecodingDialogBox.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+
 </Project>
