@@ -20,7 +20,7 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
 
             for (int i = 0; i < payloadArray.Length; i++)
             {
-                result[i] = (double) ((int) payloadArray[i]) ;
+                result[i] = Convert.ToDouble((int) payloadArray[i]) ;
                 Debug.WriteLine($"string to double: {result[i]}");
             }
 
@@ -44,22 +44,39 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             return sb.ToString();
         }
 
+        public string ArrayPayloadToString(decimal[] payload)
+        {
+            StringBuilder sb = new StringBuilder(payload.Length);
+
+            //var asciiBytesArray = Encoding.ASCII.GetBytes(payload);
+
+            foreach (var value in payload)
+            {
+                decimal oneElemet = value;
+                if (value < 0)
+                    oneElemet = 0;
+                sb.Append(Convert.ToChar(Convert.ToInt32(oneElemet)));
+            }
+
+            return sb.ToString();
+        }
+
         public double[,] ArrayPayloadToDiagonalArray(double[] payload, int width, int height)
         {
             var result2DArray = new double[width, height];
-            for (int i = 0; i < result2DArray.GetLength(0); i++)
+            for (int j = 0; j < result2DArray.GetLength(1); j++)
             {
-                for (int j = 0; j < result2DArray.GetLength(1); j++)
+                for (int i = 0; i < result2DArray.GetLength(0); i++)
                 {
-                    result2DArray[j, i] = 0;
+                    result2DArray[i, j] = 0;
                 }
             }
 
-            int payloadLenght = payload.Length;
+            int payloadLength = payload.Length;
             var squareLength = (width <= height) ? width : height;
 
 
-            if (payloadLenght > squareLength)
+            if (payloadLength > squareLength)
             {
                 throw new ArithmeticException("Message is too long");
             }
@@ -152,8 +169,8 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
 
         public double[] ArrayDiagonalToArray(double[,] payload)
         {
-            int width = payload.GetLength(0);
-            int height = payload.GetLength(1);
+            int width = payload.GetLength(1);
+            int height = payload.GetLength(0);
 
             int matrixLength = (width <= height) ? width : height;
 
@@ -167,11 +184,33 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             Debug.WriteLine("Payload extraction 1D array: ");
             foreach (var value in resultArray)
             {
-                Debug.Write(value);
+                Debug.Write(value + "|");
             }
 
             return resultArray;
         }
 
+        public decimal[] ArrayDiagonalToArray(decimal[,] payload)
+        {
+            int width = payload.GetLength(0);
+            int height = payload.GetLength(1);
+
+            int matrixLength = (width <= height) ? width : height;
+
+            decimal[] resultArray = new decimal[matrixLength];
+
+            for (int i = 0; i < matrixLength; i++)
+            {
+                resultArray[i] = payload[i, i];
+            }
+
+            Debug.WriteLine("Payload extraction 1D array: ");
+            foreach (var value in resultArray)
+            {
+                Debug.Write(value);
+            }
+
+            return resultArray;
+        }
     }
 }

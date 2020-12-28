@@ -35,14 +35,13 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             _matrixService = new MatrixService();
             _dwtHandler = new DwtPrecisionAlgorithm();
             _svdHandler = new SvdAlgorithm();
+            _iterations = 1;
+            _quarter = QuarterSymbol.HH;
+            _channel = "red";
         }
 
         public Bitmap Encode(Bitmap inputImage, string payload, AlgorithmConfiguration algconfig)
         {
-
-            _iterations = 1;
-            _quarter = QuarterSymbol.HH;
-            _channel = "red";
             decimal[][,] inputDoubles = _imageArrayConverter.BitmapToPrecisionMatrices(inputImage.DeepClone());
             _dwtHandler.OriginalImage = inputDoubles.DeepClone();
             _dwtHandler.ApplyHaarTransform(true, true, _iterations);
@@ -68,6 +67,8 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             //Bitmap smallImage = ExtractQuarter(imageAfterDwt, _iterations, _quarter);
             decimal[][,] quarter = ExtractQuarter(imageAfterDwt, _iterations, _quarter);
 
+            //byte[] payloadByteArray = Encoding.ASCII.GetBytes(payload);
+
             var payloadDoubleArray2D =
                 _stringArrayConverter.ArrayPayloadToDiagonalArray(_stringArrayConverter.StringPayloadToArray(payload),
                     quarter[0].GetLength(0), quarter[0].GetLength(1));
@@ -75,9 +76,9 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             //var smallImg2DMatrices = _imageArrayConverter.BitmapToMatrices(smallImage);
             var quarterDouble = _matrixService.DecimalToDouble(quarter);
 
-            //var smallMatrixWatermarked = _svdHandler.HidePayloadSVD(quarterDouble, payloadDoubleArray2D, _channel);
+            var smallMatrixWatermarked = _svdHandler.HidePayloadSVD(quarterDouble, payloadDoubleArray2D, _channel);
 
-            var smallMatrixPrecisionWatermarked = _matrixService.DoubleToDecimal(quarterDouble);
+           var smallMatrixPrecisionWatermarked = _matrixService.DoubleToDecimal(smallMatrixWatermarked);
 
             var bigImageWatermarked = MergeQuarter(smallMatrixPrecisionWatermarked, imageAfterDwt, _iterations, _quarter);
 
@@ -123,6 +124,8 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             Debug.WriteLine($"Are before and after equals (0 mean equal, -1 different sizes, >0 differences count): {areEquals}");
 
             //MessageBox.Show($"Meassures : {newImage.Width}, {newImage.Height}");
+            _dwtHandler.OriginalImage = null;
+            _dwtHandler.TransformedImage = null;
 
             return newImage;
         }
@@ -130,10 +133,36 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
 
         public Tuple<Bitmap, string> Decode(Bitmap encodedImage, AlgorithmConfiguration configuration)
         {
-            _iterations = 1;
-            _quarter = QuarterSymbol.LH;
-            _channel = "red";
             var payload = "";
+            decimal[][,] inputDoubles = _imageArrayConverter.BitmapToPrecisionMatrices(encodedImage.DeepClone());
+            _dwtHandler.OriginalImage = inputDoubles.DeepClone();
+            _dwtHandler.ApplyHaarTransform(true, true, _iterations);
+
+            var imageArrayAfterDwt = _dwtHandler.TransformedImage.DeepClone();
+            decimal[][,] quarter = ExtractQuarter(imageArrayAfterDwt, _iterations, _quarter);
+            var quarterDouble = _matrixService.DecimalToDouble(quarter);
+
+            var originalImage2dAndPayload =
+                _svdHandler.ExtractPayloadSVD(quarterDouble, _channel);
+
+            var payload2d = originalImage2dAndPayload.Item2;
+
+            var originalImage = originalImage2dAndPayload.Item1;
+
+            var smallMatrixPrecisionOrigin = _matrixService.DoubleToDecimal(originalImage);
+
+            var bigImageOrigin = MergeQuarter(smallMatrixPrecisionOrigin, imageArrayAfterDwt, _iterations, _quarter);
+
+            _dwtHandler.OriginalImage = null;
+            _dwtHandler.TransformedImage = null;
+            _dwtHandler.TransformedImage = bigImageOrigin;
+            _dwtHandler.ApplyHaarTransform(false, true, _iterations);
+            var newMatrix = _dwtHandler.OriginalImage;
+            //TODO make original matrix 
+            var originImage = _imageArrayConverter.MatricesPrecisionToBitmap(newMatrix);
+            payload = _stringArrayConverter.ArrayPayloadToString(_stringArrayConverter.ArrayDiagonalToArray(payload2d));
+
+
             /*_dwtHandler.OriginalImage = encodedImage;
             _dwtHandler.ApplyHaarTransform(true, false, _iterations);
             decimal[][,] matrixWatermarkedAfterDwt = _dwtHandler.TransformedImage;
@@ -158,10 +187,11 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
 
             //var origin
 
-            //var originImg = _imageArrayConverter.MatricesToBitmap();
-            Debug.WriteLine($"payload : {payload}");*/
+            //var originImg = _imageArrayConverter.MatricesToBitmap();*/
 
-            return new Tuple<Bitmap, string>(encodedImage, payload);
+            Debug.WriteLine("");
+            Debug.WriteLine($"payload : {payload}");
+            return new Tuple<Bitmap, string>(originImage, payload);
         }
 
         private Bitmap ExtractQuarter(Bitmap imageToSplit, int iterations, QuarterSymbol quarterSymbol)
@@ -300,14 +330,14 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
                 case QuarterSymbol.HL:
                     widthShift = matrixWidth / Convert.ToInt32(Math.Pow(2, _iterations));
                     heightShift = 0;
-                    widthShiftEnd = matrixWidth / Convert.ToInt32(Math.Pow(2, _iterations - 1));
+                    widthShiftEnd = matrixWidth / Convert.ToInt32(Math.Pow(2, _iterations));
                     heightShiftEnd = matrixHeight / Convert.ToInt32(Math.Pow(2, _iterations));
                     break;
                 case QuarterSymbol.LH:
                     widthShift = 0;
                     heightShift = matrixHeight / Convert.ToInt32(Math.Pow(2, _iterations));
                     widthShiftEnd = matrixWidth / Convert.ToInt32(Math.Pow(2, _iterations));
-                    heightShiftEnd = matrixHeight / Convert.ToInt32(Math.Pow(2, _iterations - 1));
+                    heightShiftEnd = matrixHeight / Convert.ToInt32(Math.Pow(2, _iterations));
                     break;
                 case QuarterSymbol.LL:
                     widthShift = 0;
