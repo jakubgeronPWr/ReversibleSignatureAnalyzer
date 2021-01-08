@@ -37,7 +37,7 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             _svdHandler = new SvdAlgorithm();
             _iterations = 1;
             _quarter = QuarterSymbol.HH;
-            _channel = "red";
+            _channel = "blue";
         }
 
         public Bitmap Encode(Bitmap inputImage, string payload, AlgorithmConfiguration algconfig)
@@ -45,26 +45,8 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             decimal[][,] inputDoubles = _imageArrayConverter.BitmapToPrecisionMatrices(inputImage.DeepClone());
             _dwtHandler.OriginalImage = inputDoubles.DeepClone();
             _dwtHandler.ApplyHaarTransform(true, true, _iterations);
-            //_dwtHandler.OriginalImage = _dwtHandler.TransformedImage;
-            //dwtHandler.ApplyHaarTransform(false, true, "2");
 
             var imageAfterDwt = _dwtHandler.TransformedImage.DeepClone();
-
-            //Bitmap smallImage = new Bitmap(imageAfterDwt.Width/(iterations*2), imageAfterDwt.Height/(iterations*2));
-
-            //for (int i = (imageAfterDwt.Height / (iterations * 2)) ; i < imageAfterDwt.Height / ((iterations * 2)-1*iterations) ; i++)
-            //{
-            //    for (int j = (imageAfterDwt.Width / (iterations * 2)) ; j < imageAfterDwt.Width / ((iterations * 2)-1*iterations); j++)
-            //    {
-            //        var width = j - (imageAfterDwt.Width / (iterations * 2));
-            //        var height = i - (imageAfterDwt.Height / (iterations * 2));
-            //        Color color = imageAfterDwt.GetPixel(j, i);
-            //        //Debug.WriteLine($"Value of color{ color }");
-            //        smallImage.SetPixel(width, height, color);
-            //    }
-            //}
-
-            //Bitmap smallImage = ExtractQuarter(imageAfterDwt, _iterations, _quarter);
             decimal[][,] quarter = ExtractQuarter(imageAfterDwt, _iterations, _quarter);
 
             //byte[] payloadByteArray = Encoding.ASCII.GetBytes(payload);
@@ -97,9 +79,6 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             //    }
             //}
 
-
-
-            
             _dwtHandler.OriginalImage = null;
             _dwtHandler.TransformedImage = null;
             _dwtHandler.TransformedImage = bigImageWatermarked;
@@ -162,35 +141,9 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             var originImage = _imageArrayConverter.MatricesPrecisionToBitmap(newMatrix);
             payload = _stringArrayConverter.ArrayPayloadToString(_stringArrayConverter.ArrayDiagonalToArray(payload2d));
 
-
-            /*_dwtHandler.OriginalImage = encodedImage;
-            _dwtHandler.ApplyHaarTransform(true, false, _iterations);
-            decimal[][,] matrixWatermarkedAfterDwt = _dwtHandler.TransformedImage;
-            //_dwtHandler.OriginalImage = OriginalImage;
-            //_dwtHandler.ApplyHaarTransform(true, true, _iterations);
-            //Bitmap imageOriginalAfterDwt = _dwtHandler.TransformedImage.Clone() as Bitmap;
-
-            //Bitmap smallOriginalImage = ExtractQuarter(imageOriginalAfterDwt, _iterations, quarter);
-
-            Bitmap smallWatermarkedImage = ExtractQuarter(imageWatermarkedAfterDwt, _iterations, _quarter);
-
-
-            var smallImgWatermarked2DMatrices = _imageArrayConverter.BitmapToMatrices(smallWatermarkedImage);
-            //var smallImgOriginal2DMatrices = _imageArrayConverter.BitmapToMatrices(smallOriginalImage);
-
-            var originalImage2dAndPayload =
-                _svdHandler.ExtractPayloadSVD(smallImgWatermarked2DMatrices, _channel);
-
-            var payload2d = originalImage2dAndPayload.Item2;
-
-            payload = _stringArrayConverter.ArrayPayloadToString(_stringArrayConverter.ArrayDiagonalToArray(payload2d));
-
-            //var origin
-
-            //var originImg = _imageArrayConverter.MatricesToBitmap();*/
-
             Debug.WriteLine("");
             Debug.WriteLine($"payload : {payload}");
+            Debug.WriteLine("");
             return new Tuple<Bitmap, string>(originImage, payload);
         }
 

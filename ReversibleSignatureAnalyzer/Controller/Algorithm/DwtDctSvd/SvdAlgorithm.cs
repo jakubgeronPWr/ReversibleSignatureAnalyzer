@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Accord.IO;
 using Accord.Math;
@@ -94,7 +95,13 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
         public double[,] HidePayload(double[,] matrix, double[,] payloadMatrix)
         {
             double[,] newMatrix = matrix.DeepClone();
-            double[,] resultMatrix;// = new double[newMatrix.GetLength(0), newMatrix.GetLength(1)];
+            //double[,] resultMatrix;// = new double[newMatrix.GetLength(0), newMatrix.GetLength(1)];
+            double[,] resultMatrix = matrix.DeepClone();
+
+            _inMemorySo = new double[9,9];
+
+            #region CLSSSIC METHOD 
+            /*
             var svdHost = new SingularValueDecomposition(newMatrix, true, true, false, false);
             //var svdPayload = new SingularValueDecomposition(payloadMatrix, true, true, true, true);
             var sO = svdHost.DiagonalMatrix.DeepClone();
@@ -117,59 +124,8 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
                 //Debug.WriteLine("AlphaPayload: ");
                 //PrintMatrix(alphaPayload);
 
+
                 var sP = Code(_inMemorySo, payloadMatrix); //sO.Add(alphaPayload);
-
-                /*
-
-                var m = new double[,]
-                {
-                    {1.0, 0.0, 0.0, 0.0, 2.0},
-                    {0.0, 0.0, 3.0, 0.0, 0.0},
-                    {0.0, 0.0, 0.0, 0.0, 0.0},
-                    {0.0, 4.0, 0.0, 0.0, 0.0},
-                };
-
-                var svdM = new SingularValueDecomposition(m, true, true, false, false);
-
-
-                var u = new double[,]
-                {
-                    {0.0, 0.0, 1.0, 0.0},
-                    {0.0, 1.0, 0.0, 0.0},
-                    {0.0, 0.0, 0.0, -1.0},
-                    {1.0, 0.0, 0.0, 0.0},
-                };
-
-                var s = new double[,]
-                {
-                    {4.0, 0.0, 0.0, 0.0, 0.0},
-                    {0.0, 3.0, 0.0, 0.0, 0.0},
-                    {0.0, 0.0, Math.Sqrt(5), 0.0, 0.0},
-                    {0.0, 0.0, 0.0, 0.0, 0.0},
-                };
-
-                var vt = new double[,]
-                {
-                    {0.0, 1.0, 0.0, 0.0, 0.0},
-                    {0.0, 0.0, 1.0, 0.0, 0.0},
-                    {Math.Sqrt(0.2), 0.0, 0.0, 0.0, Math.Sqrt(0.8)},
-                    {0.0, 0.0, 0.0, 1.0, 0.0},
-                    {-Math.Sqrt(0.8), 0.0, 0.0, 0.0, Math.Sqrt(0.2)},
-                };
-
-                var calc_m = Matrix.Dot(Matrix.Dot(u,s), vt);
-                var calc_mSVD = Matrix.Dot(Matrix.Dot(svdM.LeftSingularVectors,svdM.DiagonalMatrix), svdM.RightSingularVectors.Transpose());
-
-                Debug.WriteLine("M:");
-                PrintMatrix(m);
-
-                Debug.WriteLine("Calc M:");
-                PrintMatrix(calc_m);
-
-                Debug.WriteLine("Calc svdM:");
-                PrintMatrix(calc_mSVD);
-
-                */
 
                 //Debug.WriteLine("AlphaPayload: ");
                 //PrintMatrix(alphaPayload);
@@ -222,19 +178,97 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
                 throw new ArithmeticException("Payload matrix should have same dimensions as Image Host matrix");
             }
 
+            */
+
+#endregion
+
+            SingularValueDecomposition smallSVD;
+            //SPLIT IMAGE TO SMALL PARTS AS MANY AS IT NEEDS
+            for (int i = 0; i < 9; i++)
+            {
+                var smallPart = new double[4, 4];
+
+                //smallPart[0, 0] = newMatrix[2 * i, 2 * i];
+                //smallPart[1, 0] = newMatrix[2 * (i + 1), 2 * i];
+                //smallPart[0, 1] = newMatrix[2 * i, 2 * (i + 1)];
+                //smallPart[1, 1] = newMatrix[2 * (i + 1), 2 * (i + 1)];
+
+                smallPart[0, 0] = newMatrix[4 * i, (4 * i)];
+                smallPart[1, 0] = newMatrix[(4 * i) + 1, (4 * i)];
+                smallPart[2, 0] = newMatrix[(4 * i) + 2, (4 * i)];
+                smallPart[3, 0] = newMatrix[(4 * i) + 3, (4 * i)];
+
+                smallPart[0, 1] = newMatrix[4 * i, (4 * i) + 1];
+                smallPart[1, 1] = newMatrix[(4 * i) + 1, (4 * i) + 1];
+                smallPart[2, 1] = newMatrix[(4 * i) + 2, (4 * i) + 1];
+                smallPart[3, 1] = newMatrix[(4 * i) + 3, (4 * i) + 1];
+
+                smallPart[0, 2] = newMatrix[4 * i, (4 * i) + 2];
+                smallPart[1, 2] = newMatrix[(4 * i) + 1, (4 * i) + 2];
+                smallPart[2, 2] = newMatrix[(4 * i) + 2, (4 * i) + 2];
+                smallPart[3, 2] = newMatrix[(4 * i) + 3, (4 * i) + 2];
+
+                smallPart[0, 3] = newMatrix[4 * i, (4 * i) + 3];
+                smallPart[1, 3] = newMatrix[(4 * i) + 1, (4 * i) + 3];
+                smallPart[2, 3] = newMatrix[(4 * i) + 2, (4 * i) + 3];
+                smallPart[3, 3] = newMatrix[(4 * i) + 3, (4 * i) + 3];
+
+                smallSVD = new SingularValueDecomposition(smallPart);
+                var sSmall = smallSVD.DiagonalMatrix;
+                _inMemorySo[i, i] = sSmall[0, 0];
+                sSmall[0, 0] = payloadMatrix[i, i];
+
+                var smallUS = Matrix.Dot(smallSVD.LeftSingularVectors, sSmall);
+                var smallVoT = smallSVD.RightSingularVectors.Transpose();
+
+                var smallPartWithPayload = Matrix.Dot(smallUS, smallVoT);
+
+                //resultMatrix[2 * i, 2 * i] = smallPartWithPayload[0, 0];
+                //resultMatrix[2 * (i + 1), 2 * i] = smallPartWithPayload[1, 0];
+                //resultMatrix[2 * i, 2 * (i + 1)] = smallPartWithPayload[0, 1];
+                //resultMatrix[2 * (i + 1), 2 * (i + 1)] = smallPartWithPayload[1, 1];
+
+                resultMatrix[4 * i, (4 * i)] = smallPartWithPayload[0, 0];
+                resultMatrix[(4 * i) + 1, (4 * i)] = smallPartWithPayload[1, 0];
+                resultMatrix[(4 * i) + 2, (4 * i)] = smallPartWithPayload[2, 0];
+                resultMatrix[(4 * i) + 3, (4 * i)] = smallPartWithPayload[3, 0];
+
+                resultMatrix[4 * i, (4 * i) + 1] = smallPartWithPayload[0, 1];
+                resultMatrix[(4 * i) + 1, (4 * i) + 1] = smallPartWithPayload[1, 1];
+                resultMatrix[(4 * i) + 2, (4 * i) + 1] = smallPartWithPayload[2, 1];
+                resultMatrix[(4 * i) + 3, (4 * i) + 1] = smallPartWithPayload[3, 1];
+
+                resultMatrix[4 * i, (4 * i) + 2] = smallPartWithPayload[0, 2];
+                resultMatrix[(4 * i) + 1, (4 * i) + 2] = smallPartWithPayload[1, 2];
+                resultMatrix[(4 * i) + 2, (4 * i) + 2] = smallPartWithPayload[2, 2];
+                resultMatrix[(4 * i) + 3, (4 * i) + 2] = smallPartWithPayload[3, 2];
+
+                resultMatrix[4 * i, (4 * i) + 3] = smallPartWithPayload[0, 3];
+                resultMatrix[(4 * i) + 1, (4 * i) + 3] = smallPartWithPayload[1, 3];
+                resultMatrix[(4 * i) + 2, (4 * i) + 3] = smallPartWithPayload[2, 3];
+                resultMatrix[(4 * i) + 3, (4 * i) + 3] = smallPartWithPayload[3, 3];
+
+                Debug.WriteLine($"S diagonal small watermarked array number {i}: ");
+                PrintMatrix(sSmall);
+
+            }
+
             return resultMatrix;
         }
 
         public Tuple<double[,], double[,]> ExtractPayload(double[,] watermarkedMatrix) //, double[,] originalMatrix)
         {
             double[,] watermarked2D = watermarkedMatrix.DeepClone();
+            double[,] origin2D = watermarkedMatrix.DeepClone();
             //var result = new Dictionary<string, double[,]>();
             Debug.WriteLine("in memory S0");
             PrintMatrix(_inMemorySo);
 
+            #region CLASSIC METHOD
+            /*
+            
             var svdWatermarked = new SingularValueDecomposition(watermarked2D, true, true, false, true);
             var sM = svdWatermarked.DiagonalMatrix;
-
             var decodeTuple = Decode(sM);
 
             Debug.WriteLine("Sm encoding matrix: ");
@@ -263,7 +297,83 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             Debug.WriteLine("]");
 
             var origin2D =  Matrix.Dot(Matrix.Dot(svdWatermarked.LeftSingularVectors, _inMemorySo), svdWatermarked.RightSingularVectors.Transpose());
-            return new Tuple<double[,], double[,]>(origin2D, decodeTuple.Item2);
+            var payload = decodeTuple.Item2
+            */
+            #endregion
+
+            SingularValueDecomposition smallSVD;
+            var payload = _inMemorySo.DeepClone();
+            //SPLIT IMAGE TO SMALL PARTS AS MANY AS IT NEEDS
+            for (int i = 0; i < 9; i++)
+            {
+                //var smallPart = new double[2, 2];
+                //smallPart[0, 0] = watermarked2D[2 * i, 2 * i];
+                //smallPart[1, 0] = watermarked2D[2 * (i + 1), 2 * i];
+                //smallPart[0, 1] = watermarked2D[2 * i, 2 * (i + 1)];
+                //smallPart[1, 1] = watermarked2D[2 * (i + 1), 2 * (i + 1)];
+
+                var smallPart = new double[4, 4];
+
+                smallPart[0, 0] = watermarked2D[(4 * i), (4 * i)];
+                smallPart[1, 0] = watermarked2D[(4 * i) + 1, (4 * i)];
+                smallPart[2, 0] = watermarked2D[(4 * i) + 2, (4 * i)];
+                smallPart[3, 0] = watermarked2D[(4 * i) + 3, (4 * i)];
+
+                smallPart[0, 1] = watermarked2D[4 * i, (4 * i)+1];
+                smallPart[1, 1] = watermarked2D[(4 * i) + 1, (4 * i)+1];
+                smallPart[2, 1] = watermarked2D[(4 * i) + 2, (4 * i)+1];
+                smallPart[3, 1] = watermarked2D[(4 * i) + 3, (4 * i)+1];
+
+                smallPart[0, 2] = watermarked2D[4 * i, (4 * i)+2];
+                smallPart[1, 2] = watermarked2D[(4 * i) + 1, (4 * i)+2];
+                smallPart[2, 2] = watermarked2D[(4 * i) + 2, (4 * i)+2];
+                smallPart[3, 2] = watermarked2D[(4 * i) + 3, (4 * i)+2];
+
+                smallPart[0, 3] = watermarked2D[4 * i, (4 * i)+3];
+                smallPart[1, 3] = watermarked2D[(4 * i) + 1, (4 * i)+3];
+                smallPart[2, 3] = watermarked2D[(4 * i) + 2, (4 * i)+3];
+                smallPart[3, 3] = watermarked2D[(4 * i) + 3, (4 * i)+3];
+
+                smallSVD = new SingularValueDecomposition(smallPart);
+                var sSmall = smallSVD.DiagonalMatrix;
+
+                Debug.WriteLine($"S diagonal small array with watermark on extracting array number {i}: ");
+                PrintMatrix(sSmall);
+
+                payload[i, i] = sSmall[0, 0];
+                sSmall[0, 0] = _inMemorySo[i, i];
+
+                var smallUS = Matrix.Dot(smallSVD.LeftSingularVectors, sSmall);
+                var smallVoT = smallSVD.RightSingularVectors.Transpose();
+
+                var smallPartOrigin = Matrix.Dot(smallUS, smallVoT);
+
+                origin2D[(4 * i), (4 * i)] = smallPartOrigin[0, 0];
+                origin2D[(4 * i) + 1, (4 * i)] = smallPartOrigin[1, 0];
+                origin2D[(4 * i) + 2, (4 * i)] = smallPartOrigin[2, 0];
+                origin2D[(4 * i) + 3, (4 * i)] = smallPartOrigin[3, 0];
+
+                origin2D[(4 * i), (4 * i) + 1] = smallPartOrigin[0, 1];
+                origin2D[(4 * i) + 1, (4 * i) + 1] = smallPartOrigin[1, 1];
+                origin2D[(4 * i) + 2, (4 * i) + 1] = smallPartOrigin[2, 1];
+                origin2D[(4 * i) + 3, (4 * i) + 1] = smallPartOrigin[3, 1];
+
+                origin2D[(4 * i), (4 * i) + 2] = smallPartOrigin[0, 2];
+                origin2D[(4 * i) + 1, (4 * i) + 2] = smallPartOrigin[1, 2];
+                origin2D[(4 * i) + 2, (4 * i) + 2] = smallPartOrigin[2, 2];
+                origin2D[(4 * i) + 3, (4 * i) + 2] = smallPartOrigin[3, 2];
+
+                origin2D[(4 * i), (4 * i) + 3] = smallPartOrigin[0, 3];
+                origin2D[(4 * i) + 1, (4 * i) + 3] = smallPartOrigin[1, 3];
+                origin2D[(4 * i) + 2, (4 * i) + 3] = smallPartOrigin[2, 3];
+                origin2D[(4 * i) + 3, (4 * i) + 3] = smallPartOrigin[3, 3];
+
+                Debug.WriteLine($"S diagonal small original array number {i}: ");
+                PrintMatrix(sSmall);
+
+            }
+
+            return new Tuple<double[,], double[,]>(origin2D, payload);
         }
 
         public void MatricesSVD(double[][,] matrices)
@@ -342,7 +452,8 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
 
             for (int i = 0; i < iters; i++)
             {
-                result[i, i] = Math.Round(s[i, i], 0) + (payload[i, i] * 0.001);
+                //result[i, i] = Math.Round(s[i, i], 0) + (payload[i, i] * 0.001);
+                result[i, i] = payload[i, i];
             }
             return result;
         }
@@ -356,11 +467,20 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
 
             for (int i = 0; i < iters; i++)
             {
-                var doubleString = sp[i, i].ToString().Split(',');
-                originalSp[i, i] = double.Parse(doubleString[0]);
-                if (doubleString.Length == 2)
+                //var doubleString = sp[i, i].ToString().Split(',');
+                //originalSp[i, i] = double.Parse(doubleString[0]);
+                //if (doubleString.Length == 2)
+                //{
+                //    payload[i, i] = double.Parse(doubleString[1]);
+                //}
+                //else
+                //{
+                //    payload[i, i] = 0;
+                //}
+
+                if ( Math.Round(_inMemorySo[i, i], 2) != Math.Round(sp[i, i], 2))
                 {
-                    payload[i, i] = double.Parse(doubleString[1]);
+                    payload[i, i] = sp[i, i];
                 }
                 else
                 {
@@ -369,6 +489,57 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
                 
             }
             return new Tuple<double[,], double[,]>(originalSp, payload);
+        }
+
+        private void TestSvd()
+        {
+                var m = new double[,]
+                {
+                    {1.0, 0.0, 0.0, 0.0, 2.0},
+                    {0.0, 0.0, 3.0, 0.0, 0.0},
+                    {0.0, 0.0, 0.0, 0.0, 0.0},
+                    {0.0, 4.0, 0.0, 0.0, 0.0},
+                };
+
+                var svdM = new SingularValueDecomposition(m, true, true, false, false);
+
+
+                var u = new double[,]
+                {
+                    {0.0, 0.0, 1.0, 0.0},
+                    {0.0, 1.0, 0.0, 0.0},
+                    {0.0, 0.0, 0.0, -1.0},
+                    {1.0, 0.0, 0.0, 0.0},
+                };
+
+                var s = new double[,]
+                {
+                    {4.0, 0.0, 0.0, 0.0, 0.0},
+                    {0.0, 3.0, 0.0, 0.0, 0.0},
+                    {0.0, 0.0, Math.Sqrt(5), 0.0, 0.0},
+                    {0.0, 0.0, 0.0, 0.0, 0.0},
+                };
+
+                var vt = new double[,]
+                {
+                    {0.0, 1.0, 0.0, 0.0, 0.0},
+                    {0.0, 0.0, 1.0, 0.0, 0.0},
+                    {Math.Sqrt(0.2), 0.0, 0.0, 0.0, Math.Sqrt(0.8)},
+                    {0.0, 0.0, 0.0, 1.0, 0.0},
+                    {-Math.Sqrt(0.8), 0.0, 0.0, 0.0, Math.Sqrt(0.2)},
+                };
+
+                var calc_m = Matrix.Dot(Matrix.Dot(u,s), vt);
+                var calc_mSVD = Matrix.Dot(Matrix.Dot(svdM.LeftSingularVectors,svdM.DiagonalMatrix), svdM.RightSingularVectors.Transpose());
+
+                Debug.WriteLine("M:");
+                PrintMatrix(m);
+
+                Debug.WriteLine("Calc M:");
+                PrintMatrix(calc_m);
+
+                Debug.WriteLine("Calc svdM:");
+                PrintMatrix(calc_mSVD);
         }
 
 
