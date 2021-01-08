@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.VisualBasic.CompilerServices;
 using ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd;
@@ -13,8 +14,7 @@ using ReversibleSignatureAnalyzer.Model.Algorithm.HistogramShifting;
 using ReversibleSignatureAnalyzer.Controller.Algorithm.DifferenceExpansion;
 using ReversibleSignatureAnalyzer.Controller.Algorithm;
 using System.Collections.Generic;
-using System.Drawing;
-using Brushes = System.Windows.Media.Brushes;
+using ReversibleSignatureAnalyzer.Controller.Algorithm.HistogramShifting;
 
 namespace ReversibleSignatureAnalyzer.View
 {
@@ -252,39 +252,36 @@ namespace ReversibleSignatureAnalyzer.View
 
         private void BtnConfigHS_Click(object sender, RoutedEventArgs e)
         {
-
-        }
-
-        private void BtnLoadOriginImage_Click(object sender, RoutedEventArgs e)
-        {
-            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
-            dlg.DefaultExt = ".png";
-            dlg.Filter =
-                "PNG Filses (*.png)|*.png|JPG Files (*.jpg)|*.jpg|GIF Files (*.gif)|*.gif|JPEG Files (*.jpeg)|*.jpeg";
-            Nullable<bool> result = dlg.ShowDialog();
-
-            if (result.HasValue && result.Value)
+            HashSet<EmbeddingChanel> set = new HashSet<EmbeddingChanel>();
+            set.Add(EmbeddingChanel.R);
+            HistogramShiftingConfiguration config = new HistogramShiftingConfiguration(1, set);
+            var dialogBox = new ConfigurationDialogBox.HistogramShiftingConfiguraitonDialogBox(
+                config.EmbeddingChanels)
             {
-                isFileLoaded = true;
-                string fileName = dlg.FileName;
-
-                (dwtDctSvdAlgotithm as DwtDctSvdAlgorithm).OriginalImage = BitmapImageToBitmap(new BitmapImage(new Uri(fileName)));
-                
+                Owner = this,
+            };
+            dialogBox.ShowDialog();
+            if (dialogBox.DialogResult == true)
+            {
+                if (dialogBox.cbR.IsChecked == true)
+                {
+                    HashSet<EmbeddingChanel> embeddingChanels = new HashSet<EmbeddingChanel>();
+                    if (dialogBox.cbR.IsChecked == true)
+                    {
+                        embeddingChanels.Add(EmbeddingChanel.R);
+                    }
+                    if (dialogBox.cbG.IsChecked == true)
+                    {
+                        embeddingChanels.Add(EmbeddingChanel.G);
+                    }
+                    if (dialogBox.cbB.IsChecked == true)
+                    {
+                        embeddingChanels.Add(EmbeddingChanel.B);
+                    }
+                    currentDeConfiguration = new HistogramShiftingConfiguration(1, embeddingChanels);
+                }
             }
         }
-
-        private Bitmap BitmapImageToBitmap(BitmapImage bitmapImage)
-        {
-            using (MemoryStream outStream = new MemoryStream())
-            {
-                BitmapEncoder enc = new BmpBitmapEncoder();
-                enc.Frames.Add(BitmapFrame.Create(bitmapImage));
-                enc.Save(outStream);
-                Bitmap bitmap = new System.Drawing.Bitmap(outStream);
-                return new Bitmap(bitmap);
-            }
-        }
-
 
     }
 }
