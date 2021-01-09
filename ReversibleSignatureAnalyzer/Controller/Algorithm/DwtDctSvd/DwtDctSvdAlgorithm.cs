@@ -24,7 +24,7 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
         private SvdAlgorithm _svdHandler;
         private int _iterations;
         private QuarterSymbol _quarter;
-        private string _channel;
+        private EmbeddingChanel _channel;
 
         public Bitmap OriginalImage { get; set; }
 
@@ -37,11 +37,14 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             _svdHandler = new SvdAlgorithm();
             _iterations = 1;
             _quarter = QuarterSymbol.HH;
-            _channel = "blue";
+            _channel = EmbeddingChanel.R;
         }
 
         public Bitmap Encode(Bitmap inputImage, string payload, AlgorithmConfiguration algconfig)
         {
+            var config = algconfig as DwtSvdConfiguration;
+            SetChannelFromConfiguration(config);
+            SetQuarterFromConfiguration(config);
             decimal[][,] inputDoubles = _imageArrayConverter.BitmapToPrecisionMatrices(inputImage.DeepClone());
             _dwtHandler.OriginalImage = inputDoubles.DeepClone();
             _dwtHandler.ApplyHaarTransform(true, true, _iterations);
@@ -49,16 +52,12 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             var imageAfterDwt = _dwtHandler.TransformedImage.DeepClone();
             decimal[][,] quarter = ExtractQuarter(imageAfterDwt, _iterations, _quarter);
 
-            //byte[] payloadByteArray = Encoding.ASCII.GetBytes(payload);
-
-            var payloadDoubleArray2D =
-                _stringArrayConverter.ArrayPayloadToDiagonalArray(_stringArrayConverter.StringPayloadToArray(payload),
-                    quarter[0].GetLength(0), quarter[0].GetLength(1));
+            var payloadDoubleVector = _stringArrayConverter.StringPayloadToArray(payload);
 
             //var smallImg2DMatrices = _imageArrayConverter.BitmapToMatrices(smallImage);
             var quarterDouble = _matrixService.DecimalToDouble(quarter);
 
-            var smallMatrixWatermarked = _svdHandler.HidePayloadSVD(quarterDouble, payloadDoubleArray2D, _channel);
+            var smallMatrixWatermarked = _svdHandler.HidePayloadSVD(quarterDouble, payloadDoubleVector, _channel);
 
            var smallMatrixPrecisionWatermarked = _matrixService.DoubleToDecimal(smallMatrixWatermarked);
 
@@ -107,6 +106,42 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             _dwtHandler.TransformedImage = null;
 
             return newImage;
+        }
+
+        private void SetChannelFromConfiguration(DwtSvdConfiguration config)
+        {
+            if (config.EmbeddingChanels.Contains(EmbeddingChanel.R))
+            {
+                _channel = EmbeddingChanel.R;
+            }
+            if (config.EmbeddingChanels.Contains(EmbeddingChanel.G))
+            {
+                _channel = EmbeddingChanel.G;
+            }
+            if (config.EmbeddingChanels.Contains(EmbeddingChanel.B))
+            {
+                _channel = EmbeddingChanel.B;
+            }
+        }
+
+        private void SetQuarterFromConfiguration(DwtSvdConfiguration config)
+        {
+            if (config.QuarterSymbol.Contains(QuarterSymbol.HH))
+            {
+               _quarter = QuarterSymbol.HH;
+            }
+            if (config.QuarterSymbol.Contains(QuarterSymbol.LL))
+            {
+                _quarter = QuarterSymbol.HH;
+            }
+            if (config.QuarterSymbol.Contains(QuarterSymbol.LH))
+            {
+                _quarter = QuarterSymbol.HH;
+            }
+            if (config.QuarterSymbol.Contains(QuarterSymbol.HL))
+            {
+                _quarter = QuarterSymbol.HL;
+            }
         }
 
 
@@ -357,8 +392,6 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
 
                 return differences;
             }
-            
-            
         }
 
     }

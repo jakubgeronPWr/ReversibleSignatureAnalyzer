@@ -61,43 +61,6 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             return sb.ToString();
         }
 
-        public double[,] ArrayPayloadToDiagonalArray(double[] payload, int width, int height)
-        {
-            var result2DArray = new double[width, height];
-            for (int j = 0; j < result2DArray.GetLength(1); j++)
-            {
-                for (int i = 0; i < result2DArray.GetLength(0); i++)
-                {
-                    result2DArray[i, j] = 0;
-                }
-            }
-
-            int payloadLength = payload.Length;
-            var squareLength = (width <= height) ? width : height;
-
-
-            if (payloadLength > squareLength)
-            {
-                throw new ArithmeticException("Message is too long");
-            }
-            else
-            {
-                Debug.WriteLine("2D Payload array: ");
-                
-                for (int k = 0; k < squareLength; k++)
-                {
-                    Debug.WriteLine("");
-                    Debug.Write("[");
-                    if ( k < payload.Length)
-                        result2DArray[k, k] = payload[k];
-                    Debug.Write($"{result2DArray[k, k]}, ");
-                    Debug.Write("]");
-                }
-            }
-
-            return result2DArray;
-        }
-
         public double[,] ArrayPayloadTo2DArray(double[] payload, int width, int height)
         {
             var result2DArray = new double[width, height];

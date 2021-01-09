@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using Accord.IO;
 using Accord.Math;
 using Accord.Math.Decompositions;
+using ReversibleSignatureAnalyzer.Model;
 using Debug = System.Diagnostics.Debug;
 
 namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
@@ -14,24 +15,24 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
         private double[,] _inMemorySo;
         private double _alpha = 0.05;
 
-        public double[][,] HidePayloadSVD(double[][,] hostMatrics, double[,] payloadMatrix, string channel)
+        public double[][,] HidePayloadSVD(double[][,] hostMatrics, double[] payloadVector, EmbeddingChanel channel)
         {
-            switch (channel.ToLower())
+            switch (channel)
             {
-                case "red" :
-                    hostMatrics[0] = HidePayload(hostMatrics[0], payloadMatrix);
+                case EmbeddingChanel.R:
+                    hostMatrics[0] = HidePayload(hostMatrics[0], payloadVector);
                     break;
-                case "green":
-                    hostMatrics[1] = HidePayload(hostMatrics[1], payloadMatrix);
+                case EmbeddingChanel.G:
+                    hostMatrics[1] = HidePayload(hostMatrics[1], payloadVector);
                     break;
-                case "blue":
-                    hostMatrics[2] = HidePayload(hostMatrics[2], payloadMatrix);
+                case EmbeddingChanel.B:
+                    hostMatrics[2] = HidePayload(hostMatrics[2], payloadVector);
                     break;
                 default:
 
                     for (int k = 0; k < hostMatrics.Length; k++)
                     {
-                        HidePayload(hostMatrics[k], payloadMatrix);
+                        HidePayload(hostMatrics[k], payloadVector);
                     }
                     break;
             }
@@ -39,24 +40,24 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             return hostMatrics;
         }
 
-        public Tuple<double[][,], double[,]> ExtractPayloadSVD(double[][,] watermarkedMatrix, string channel)//double[][,] originalMatrix, string channel)
+        public Tuple<double[][,], double[,]> ExtractPayloadSVD(double[][,] watermarkedMatrix, EmbeddingChanel channel)//double[][,] originalMatrix, string channel)
         {
             var newImage = watermarkedMatrix.DeepClone();
             Tuple<double[][,], double[,]> result = null;
 
-            switch (channel.ToLower())
+            switch (channel)
             {
-                case "red":
+                case EmbeddingChanel.R:
                     var tempRed = ExtractPayload(watermarkedMatrix[0]);
                     newImage[0] = tempRed.Item1;
                     result = new Tuple<double[][,], double[,]>(newImage, tempRed.Item2);
                     break;
-                case "green":
+                case EmbeddingChanel.G:
                     var tempGreen = ExtractPayload(watermarkedMatrix[1]);
                     newImage[0] = tempGreen.Item1;
                     result = new Tuple<double[][,], double[,]>(newImage, tempGreen.Item2);
                     break;
-                case "blue":
+                case EmbeddingChanel.B:
                     var tempBlue = ExtractPayload(watermarkedMatrix[2]);
                     newImage[0] = tempBlue.Item1;
                     result = new Tuple<double[][,], double[,]>(newImage, tempBlue.Item2);
@@ -92,13 +93,17 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             return result;
         }
 
-        public double[,] HidePayload(double[,] matrix, double[,] payloadMatrix)
+        public double[,] HidePayload(double[,] matrix, double[] payloadVector)
         {
             double[,] newMatrix = matrix.DeepClone();
             //double[,] resultMatrix;// = new double[newMatrix.GetLength(0), newMatrix.GetLength(1)];
             double[,] resultMatrix = matrix.DeepClone();
 
-            _inMemorySo = new double[9,9];
+            var msgLength = payloadVector.Count();
+            _inMemorySo = new double[msgLength, msgLength];
+
+            //var payloadMatrix = ArrayPayloadToDiagonalArray(payloadVector,
+            //    matrix.GetLength(0), matrix.GetLength(1));
 
             #region CLSSSIC METHOD 
             /*
@@ -180,11 +185,11 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
 
             */
 
-#endregion
+            #endregion
 
             SingularValueDecomposition smallSVD;
             //SPLIT IMAGE TO SMALL PARTS AS MANY AS IT NEEDS
-            for (int i = 0; i < 9; i++)
+            for (int i = 0; i < msgLength; i++)
             {
                 var smallPart = new double[4, 4];
 
@@ -216,7 +221,7 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
                 smallSVD = new SingularValueDecomposition(smallPart);
                 var sSmall = smallSVD.DiagonalMatrix;
                 _inMemorySo[i, i] = sSmall[0, 0];
-                sSmall[0, 0] = payloadMatrix[i, i];
+                sSmall[0, 0] = payloadVector[i]; //payloadMatrix[i, i];
 
                 var smallUS = Matrix.Dot(smallSVD.LeftSingularVectors, sSmall);
                 var smallVoT = smallSVD.RightSingularVectors.Transpose();
@@ -264,6 +269,8 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             Debug.WriteLine("in memory S0");
             PrintMatrix(_inMemorySo);
 
+            var msgLength = _inMemorySo.GetLength(0);
+
             #region CLASSIC METHOD
             /*
             
@@ -304,7 +311,7 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             SingularValueDecomposition smallSVD;
             var payload = _inMemorySo.DeepClone();
             //SPLIT IMAGE TO SMALL PARTS AS MANY AS IT NEEDS
-            for (int i = 0; i < 9; i++)
+            for (int i = 0; i < msgLength; i++)
             {
                 //var smallPart = new double[2, 2];
                 //smallPart[0, 0] = watermarked2D[2 * i, 2 * i];
@@ -542,7 +549,40 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
                 PrintMatrix(calc_mSVD);
         }
 
+        private double[,] ArrayPayloadToDiagonalArray(double[] payload, int width, int height)
+        {
+            var result2DArray = new double[width, height];
+            for (int j = 0; j < result2DArray.GetLength(1); j++)
+            {
+                for (int i = 0; i < result2DArray.GetLength(0); i++)
+                {
+                    result2DArray[i, j] = 0;
+                }
+            }
 
+            int payloadLength = payload.Length;
+            var squareLength = (width <= height) ? width : height;
+
+            if (payloadLength > squareLength)
+            {
+                throw new ArithmeticException("Message is too long");
+            }
+            else
+            {
+                Debug.WriteLine("2D Payload array: ");
+
+                for (int k = 0; k < squareLength; k++)
+                {
+                    Debug.WriteLine("");
+                    Debug.Write("[");
+                    if (k < payload.Length)
+                        result2DArray[k, k] = payload[k];
+                    Debug.Write($"{result2DArray[k, k]}, ");
+                    Debug.Write("]");
+                }
+            }
+            return result2DArray;
+        }
 
     }
 }

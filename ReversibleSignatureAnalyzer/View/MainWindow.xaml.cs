@@ -34,6 +34,7 @@ namespace ReversibleSignatureAnalyzer.View
         private BitmapImage resultImage;
         private string activityType;
         private AlgorithmConfiguration currentDeConfiguration = new DifferencesExpansionConfiguration(1, 20, Direction.Horizontal, new HashSet<EmbeddingChanel>(){ EmbeddingChanel.R });
+        private AlgorithmConfiguration currentDwtSvdConfiguration = new DwtSvdConfiguration(1,  new HashSet<EmbeddingChanel>(){ EmbeddingChanel.R }, new HashSet<DwtDctSvdAlgorithm.QuarterSymbol>() { DwtDctSvdAlgorithm.QuarterSymbol.HH });
         private IReversibleWatermarkingAlgorithm deAlgorithm = new DifferencesExpansionAlgorithm();
         private IReversibleWatermarkingAlgorithm dwtDctSvdAlgotithm = new DwtDctSvdAlgorithm();
         private IReversibleWatermarkingAlgorithm hsAlgorithm = new HistogramShiftingAlgorithm();
@@ -152,7 +153,7 @@ namespace ReversibleSignatureAnalyzer.View
             }
             else if (RbAlgorithm2.IsChecked.Value)
             {
-                return currentDeConfiguration;
+                return currentDwtSvdConfiguration;
             }
             else if (RbAlgorithm3.IsChecked.Value)
             {
@@ -247,7 +248,46 @@ namespace ReversibleSignatureAnalyzer.View
 
         private void BtnConfigSVD_Click(object sender, RoutedEventArgs e)
         {
-
+            DwtSvdConfiguration config = currentDwtSvdConfiguration as DwtSvdConfiguration;
+            var dialogBox = new DwtSvdConfigDialogBox(config.EmbeddingChanels, config.QuarterSymbol)
+            {
+                Owner = this,
+            };
+            dialogBox.ShowDialog();
+            if (dialogBox.DialogResult == true)
+            {
+                HashSet<EmbeddingChanel> embeddingChanel = new HashSet<EmbeddingChanel>();
+                if (dialogBox.cbR.IsChecked == true)
+                {
+                    embeddingChanel.Add(EmbeddingChanel.R);
+                }
+                if (dialogBox.cbG.IsChecked == true)
+                {
+                    embeddingChanel.Add(EmbeddingChanel.G);
+                }
+                if (dialogBox.cbB.IsChecked == true)
+                {
+                    embeddingChanel.Add(EmbeddingChanel.B);
+                }
+                HashSet<DwtDctSvdAlgorithm.QuarterSymbol> quarter = new HashSet<DwtDctSvdAlgorithm.QuarterSymbol>();
+                if (dialogBox.qHH.IsChecked == true)
+                {
+                    quarter.Add(DwtDctSvdAlgorithm.QuarterSymbol.HH);
+                }
+                if (dialogBox.qHL.IsChecked == true)
+                {
+                    quarter.Add(DwtDctSvdAlgorithm.QuarterSymbol.HL);
+                }
+                if (dialogBox.qLH.IsChecked == true)
+                {
+                    quarter.Add(DwtDctSvdAlgorithm.QuarterSymbol.LH);
+                }
+                if (dialogBox.qLL.IsChecked == true)
+                {
+                    quarter.Add(DwtDctSvdAlgorithm.QuarterSymbol.LL);
+                }
+                currentDwtSvdConfiguration = new DwtSvdConfiguration(1, embeddingChanel, quarter);
+            }
         }
 
         private void BtnConfigHS_Click(object sender, RoutedEventArgs e)
