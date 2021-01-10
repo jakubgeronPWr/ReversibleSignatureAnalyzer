@@ -17,11 +17,13 @@ namespace ReversibleSignatureAnalyzer.Model
         {
             DifferencesExpansionConfiguration config = (DifferencesExpansionConfiguration) configuration;
             Bitmap image = new Bitmap(inputImage);
+            // For multiple embedding channels payload to encode is divided into chunks - one for each RGB channel
             List<string> payloadChunks = GetPayloadChunks(payload, config.EmbeddingChanels);
             int chunkNumber = 0;
             foreach(EmbeddingChanel embeddingChanel in Enum.GetValues(typeof(EmbeddingChanel))) {
                 if (config.EmbeddingChanels.Contains(embeddingChanel))
                 {
+                    // Encoding of payload chunk performed for given channel of RGB
                     EncodePayloadIntoImage(image, payloadChunks[chunkNumber++], config.EmbeddingDirection, config.Threeshold, embeddingChanel);
                 }
             }
@@ -35,6 +37,8 @@ namespace ReversibleSignatureAnalyzer.Model
             {
                 throw new ArgumentException("At least one embedding channel have to be selected");
             }
+            // Calculation of base chunks size, note that for non-divisable payload size chunks can have differnet sizes
+            // For very short payloads chunks for second and third channel can be empty
             int chunkSizeForChannel = payload.Length / numberOfChannels;
             List<string> payloadChunks = new List<string>(numberOfChannels);
             int i = 0;
@@ -54,13 +58,20 @@ namespace ReversibleSignatureAnalyzer.Model
 
         private void EncodePayloadIntoImage(Bitmap image, string payload, Direction embeddingDirection, int threeshold, EmbeddingChanel embeddingChanel)
         {
+            // Calculation of averages for pixel pairs l = (x + y) / 2
+            // Depending on embedding direction below arrays has size [image.Height, image.Width / 2] or [image.Height / 2, image.Width]
             int[,] averages = Calculate(image, CalculateAverage, embeddingDirection, embeddingChanel);
+            // Calcualtion of differences for pixel pairs h = x - y
             int[,] differences = Calculate(image, CalculateDifference, embeddingDirection, embeddingChanel);
+            // Preparing array for locality map containting 1 if pixel pair belongs to set EZ and 0 if it belongs to set EN1
             int[,] localityMap = GetEmptyArrayAdjustedToImageSize(image, embeddingDirection);
+            // Indicates to which encoding set pixel pair belongs
             EncodingSetName[,] setsIds = new EncodingSetName[localityMap.GetLength(0), localityMap.GetLength(1)];
             int EZSize = 0;
             int EN1Size = 0;
             List<int> EN2AndCN = new List<int>();
+            // Divison of pixel pairs into 5 encoding sets (EZ, EN1, EN2, CN, NC) and construction of locality map.
+            // We also store difference values for pixel pairs belonging to EN2 and CN.
             for (int i = 0; i < setsIds.GetLength(0); i++)
             {
                 for (int j = 0; j < setsIds.GetLength(1); j++)
@@ -69,18 +80,24 @@ namespace ReversibleSignatureAnalyzer.Model
                     {
                         if (differences[i, j] == 0 || differences[i, j] == -1)
                         {
+                            // Pixel pairs with expandable differences with values equal 0 or -1 are 
+                            // assigned to EZ - expandable zeros set
                             localityMap[i, j] = 1;
                             EZSize++;
                             setsIds[i, j] = EncodingSetName.EZ;
                         }
                         else if (Math.Abs(differences[i, j]) <= threeshold)
                         {
+                            // Pixel pairs with expandable differences with values other than 0 or -1 
+                            // but with abs less than configured threeshold are assigned to EN1 set
                             localityMap[i, j] = 1;
                             EN1Size++;
                             setsIds[i, j] = EncodingSetName.EN1;
                         }
                         else
                         {
+                            // Pixel pairs with expandable differences with values other than 0 or -1
+                            // and with abs greater than configured threeshold are assigned to EN2 set
                             EN2AndCN.Add(differences[i, j]);
                             localityMap[i, j] = 0;
                             setsIds[i, j] = EncodingSetName.EN2;
@@ -88,34 +105,51 @@ namespace ReversibleSignatureAnalyzer.Model
                     }
                     else if (IsChangeable(i, j, differences, averages))
                     {
+                        // Pixel pairs with non-expandable but changable differences are assigned to CN set
                         EN2AndCN.Add(differences[i, j]);
                         localityMap[i, j] = 0;
                         setsIds[i, j] = EncodingSetName.CN;
                     }
                     else
                     {
+                        // Non-expandable and non-changeable pixel pairs are assigned to NC set
                         localityMap[i, j] = 0;
                         setsIds[i, j] = EncodingSetName.NC;
                     }
                 }
             }
 
+            // For convinience of performing operations localityMap is hold as int array, but their values are
+            // always 0 or 1 so convert int array to stream of last signifacant bits and divide those bits into bytes
+            // so after operation one byte holds values of 8 subsequent LSBs
             List<byte> localityVector = GetLeastSignificatBits(ConvertToList(localityMap));
 
+            // differnece with values -2 and 1 can be restored on decoding and there is no need to save them
             List<int> filteredEN2AndCN = EN2AndCN.Where(x => x != -2 && x != 1).ToList();
+            // We obtain lsb of differences of pixel pairs from set EN2 and CN
             List<byte> LSBs = GetLeastSignificatBits(filteredEN2AndCN);
 
             int embeddingCapacity = EZSize + EN1Size + EN2AndCN.Count;
 
+            // Calculation of locality map bits stream size
             byte[] localityVectorSize = BitConverter.GetBytes((uint)localityVector.Count);
+            // Calculation of bit stream size for original LSBs of differences for pixel pairs from EN2 and CN
             byte[] LSBsSize = BitConverter.GetBytes((uint)LSBs.Count);
+            // Calculation of payload size
             byte[] payloadSize = BitConverter.GetBytes(payload.Length);
+            // Stroing information about sizes in header, this informations will be retrived on decoding
             byte[] header = ConcatArrays(localityVectorSize, LSBsSize, payloadSize);
+            // Bits of locality map, LSBs and payload represented as byte array
             byte[] data = ConcatArrays(localityVector.ToArray(), LSBs.ToArray(), Encoding.ASCII.GetBytes(payload));
+            // Compresion of data with run length encoding
             byte[] compressedData = RLE<byte>.Encode(new List<byte>(data)).ToArray();
+            // Non-compressed header bits are added at the begining of embedding stream 
             byte[] embeddingStream = ConcatArrays(header, compressedData);
+            // For convenience array of bytes (where each byte contains 8 subsequent LSBs) is converted to array of
+            // bool, where each value represents LSB 
             bool[] bits = embeddingStream.SelectMany(GetBits).ToArray();
 
+            // Calculation of new difference values - data embedding
             int bitNumber = 0;
             for (int p = 0; p < setsIds.GetLength(0) && bitNumber < bits.Length; p++)
             {
@@ -133,6 +167,7 @@ namespace ReversibleSignatureAnalyzer.Model
                     }
                 }
             }
+            // Recalculation of pixel values based on new differences values
             RecalculateImagePixels(image, averages, differences, embeddingDirection, embeddingChanel);
         }
 
@@ -354,6 +389,7 @@ namespace ReversibleSignatureAnalyzer.Model
         public Tuple<Bitmap, string> Decode(Bitmap encodedImage, AlgorithmConfiguration configuration)
         {
             Bitmap image = new Bitmap(encodedImage);
+            // Depending on configuration standard or brute force decoding is performed
             if (configuration is DifferencesExpansionConfiguration)
             {
                 return Decode(image, (DifferencesExpansionConfiguration)configuration);
@@ -373,10 +409,13 @@ namespace ReversibleSignatureAnalyzer.Model
                 foreach(EmbeddingChanel embeddingChanel in Enum.GetValues(typeof(EmbeddingChanel))) {
                     if (config.EmbeddingChanels.Contains(embeddingChanel))
                     {
+                        // For each RGB elected in configuration chunk of embedded payload is retrieved
                         payloadChunks.Add(DecodeImage(image, config.EmbeddingDirection, embeddingChanel));
                     }
                 }
+                // Payload from all selected channels are concatenated to build whole message
                 string payload = String.Join("", payloadChunks);
+                // Payload and oryginal image are returned
                 return new Tuple<Bitmap, string>(image, payload);
             }
             catch
@@ -388,42 +427,64 @@ namespace ReversibleSignatureAnalyzer.Model
 
         private string DecodeImage(Bitmap image, Direction embeddingDirection, EmbeddingChanel embeddingChannel)
         {
+            // Calculation of averages for pixel pairs l = (x + y) / 2
+            // Depending on embedding direction below arrays has size [image.Height, image.Width / 2] or [image.Height / 2, image.Width]
             int[,] averages = Calculate(image, CalculateAverage, embeddingDirection, embeddingChannel);
+            // Calcualtion of differences for pixel pairs h = x - y
             int[,] differences = Calculate(image, CalculateDifference, embeddingDirection, embeddingChannel);
+            // Preparing array for locality map containting 1 if pixel pair belongs to set EZ and 0 if it belongs to set EN1
             int[,] localityMap = GetEmptyArrayAdjustedToImageSize(image, embeddingDirection);
+            // Indicates to which of two decoding set pixel pair belongs
             DecodingSetName[,] setsIds = new DecodingSetName[localityMap.GetLength(0), localityMap.GetLength(1)];
             List<int> changeableDifferences = new List<int>();
 
+            // Pixel pairs are dividen into two sets - pixel pairs with changeable differences (CH)
+            // and non-changeable differences (NC). Changeable differences contains data embedded during
+            // encoding (it corresponds to encoding sets EZ, EN1, EN2, CN)
             for (int i = 0; i < setsIds.GetLength(0); i++)
             {
                 for (int j = 0; j < setsIds.GetLength(1); j++)
                 {
                     if (IsChangeable(i, j, differences, averages))
                     {
+                        // Pixel pairs with changeable differences are assigned to CH set and
+                        // its difference value is collected
                         changeableDifferences.Add(differences[i, j]);
                         setsIds[i, j] = DecodingSetName.CH;
                     }
                     else
                     {
+                        // Pixel pairs with non-changeable differences are assigned to NC set
                         setsIds[i, j] = DecodingSetName.NC;
                     }
                 }
             }
+            // Changeable differences are converted to stream of LSBs represented as byte list
+            // each byte holds 8 subsequent LSBs. This list contains data embedded during encoding.
             List<byte> LSBs = GetLeastSignificatBits(changeableDifferences);
+            // At the beginging of data there is header with sizes of locality map
+            // oryginal LSBs and payload
             byte[] localityVectorSizeBytes = LSBs.GetRange(0, 4).ToArray();
             byte[] originalLSBsSizeBytes = LSBs.GetRange(4, 4).ToArray();
             byte[] payloadSizeBytes = LSBs.GetRange(8, 4).ToArray();
+            // locality map, original LSBs, and payload are compressed and placed 12 bits after header
             byte[] compressedData = LSBs.GetRange(12, LSBs.Count - 12).ToArray();
+            // bytes are interpreted as int values representing size
             int localityVectorSize = BitConverter.ToInt32(localityVectorSizeBytes, 0);
             int originalLSBsSize = BitConverter.ToInt32(originalLSBsSizeBytes, 0);
             int payloadSize = BitConverter.ToInt32(payloadSizeBytes, 0);
+            // to retrieve locality map, original LSBs and payload we perform decompression
             byte[] originalData = RLE<byte>.Decode(compressedData).ToArray();
+            // after decporession original data is dividen into locality map, orginal LSBs and payload
             byte[] localityVector = new List<byte>(originalData).GetRange(0, localityVectorSize).ToArray();
             byte[] originalLSBsVector = new List<byte>(originalData).GetRange(localityVectorSize, originalLSBsSize).ToArray();
             byte[] payload = new List<byte>(originalData).GetRange(localityVectorSize + originalLSBsSize, payloadSize).ToArray();
+            // For convenience locality map, original LSBs and paload bits are represented as bool 
+            // conversion from byte array (each element containing 8 subsequent LSBs) is performed
             bool[] localityVectorBits = new List<byte>(localityVector).SelectMany(GetBits).ToArray();
             bool[] originalLSBsVectorBits = new List<byte>(originalLSBsVector).SelectMany(GetBits).ToArray();
             bool[] payloadBits = new List<byte>(payload).SelectMany(GetBits).ToArray();
+            // Calculation of original differences values
             int bitNumber = 0;
             for (int i = 0; i < differences.GetLength(0); i++)
             {
@@ -454,6 +515,7 @@ namespace ReversibleSignatureAnalyzer.Model
                     }
                 }
             }
+            // Recalculation of pixel values based on new values of differences
             RecalculateImagePixels(image, averages, differences, embeddingDirection, embeddingChannel);
             return Encoding.ASCII.GetString(payload);
         }
@@ -466,9 +528,12 @@ namespace ReversibleSignatureAnalyzer.Model
             {
                 if(bruteForceConfiguration.EmbeddingChanels.Contains(embeddingChannel))
                 {
+                    // For each RGB channel specified in configuration algorithm tries to perform decoding
                     Tuple<Bitmap, string> imageAndPayload = TryDecodeImageForChannel(processedImage, embeddingChannel, bruteForceConfiguration);
                     if (isDecodingSuccessfull(imageAndPayload))
                     {
+                        // If decoding was successfull then retrived chunk of payload from given channel is saved
+                        // If there was no success next embedding channel is used
                         processedImage = imageAndPayload.Item1;
                         payloadChunks.Add(imageAndPayload.Item2);
                     }
@@ -483,9 +548,12 @@ namespace ReversibleSignatureAnalyzer.Model
             {
                 if(bruteForceConfiguration.EmbeddingDirections.Contains(direction))
                 {
+                    // For given RGB channel algorith tries to decode payload with each embedding direction allowed in configuration
                     Tuple<Bitmap, string> imageAndPayload = TryDecodeImageForDirectionAndChannel(inputImage, Direction.Horizontal, embeddingChanel);
                     if (isDecodingSuccessfull(imageAndPayload))
                     {
+                        // If decoding with given embedding channel and direction was successfull then image and payload chunk is returned
+                        // If there was no success other embedding direction for given channel is used
                         return imageAndPayload;
                     }
                 }
@@ -503,12 +571,14 @@ namespace ReversibleSignatureAnalyzer.Model
             Bitmap image = new Bitmap(inputImage);
             try
             {
+                // If no error occurs then decoding is successfull and image and payload chunk is returned
                 return new Tuple<Bitmap, string>(image, DecodeImage(image, embeddingDirection, embeddingChannel));
             }
             catch
             {
 
             }
+            // In case of failure exception is supressed and null value (failure indicator) is returned
             return null;
         }
 
