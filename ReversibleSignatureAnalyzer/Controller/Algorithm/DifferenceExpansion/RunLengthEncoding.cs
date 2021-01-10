@@ -4,20 +4,13 @@ using System.Globalization;
 
 namespace ReversibleSignatureAnalyzer.Model.Algorithm
 {
-/// <summary>
-/// Provides the RLE codec for any integer data type.
-/// </summary>
-/// <typeparam name="T">The data's type. Must be an integer type or an ArgumentException will be thrown</typeparam>
+// Provides the RLE codec for any integer data type.
+// The data's type. Must be an integer type or an ArgumentException will be thrown
 static class RLE<T> where T : struct, IConvertible
 {
-    /// <summary>
-    /// This is the marker that identifies a compressed run
-    /// </summary>
+    // This is the marker that identifies a compressed run
     private static T rleMarker;
- 
-    /// <summary>
-    /// A run can be at most as long as the marker - 1
-    /// </summary>
+    // A run can be at most as long as the marker - 1
     private static ulong maxLength;
  
     static RLE()
@@ -25,11 +18,7 @@ static class RLE<T> where T : struct, IConvertible
         GetMaxValues();
     }
  
-    /// <summary>
-    /// RLE-Encodes a data set.
-    /// </summary>
-    /// <param name="data">The data to encode</param>
-    /// <returns>Encoded data</returns>
+    // RLE-Encodes a data set.
     public static IEnumerable<T> Encode(IEnumerable<T> data)
     {
         var enumerator = data.GetEnumerator();
@@ -42,22 +31,22 @@ static class RLE<T> where T : struct, IConvertible
         while(enumerator.MoveNext())
         {
             var currentValue = enumerator.Current;
-            // if the current value is the value of the current run, don't yield anything, 
-            // just extend the run
+            // If the current value is the value of the current run, don't yield anything, 
+            // Just extend the run
             if (currentValue.Equals(firstRunValue))
                 runLength++;
             else
             {
-                // the current value is different from the current run
-                // yield what we have so far
+                // The current value is different from the current run
+                // Yield what we have so far
                 foreach (var item in MakeRun(firstRunValue, runLength))
                     yield return item;
                      
-                // and reset the run
+                // And reset the run
                 firstRunValue = currentValue;
                 runLength = 1;
             }
-            // if there are very many identical values, don't exceed the max length
+            // If there are very many identical values, don't exceed the max length
             if (runLength > maxLength)
             {
                 foreach (var item in MakeRun(firstRunValue, maxLength))
@@ -65,16 +54,12 @@ static class RLE<T> where T : struct, IConvertible
                 runLength -= maxLength;
             }
         }
-        //yield everything that has been buffered
+        // Yield everything that has been buffered
         foreach (var item in MakeRun(firstRunValue, runLength))
             yield return item;
     }
  
-    /// <summary>
-    /// Decodes RLE-encoded data
-    /// </summary>
-    /// <param name="data">RLE-encoded data</param>
-    /// <returns>The original data</returns>
+    // Decodes RLE-encoded data
     public static IEnumerable<T> Decode(IEnumerable<T> data)
     {
         var enumerator = data.GetEnumerator();
@@ -86,23 +71,23 @@ static class RLE<T> where T : struct, IConvertible
             var value = enumerator.Current;
             if (!value.Equals(rleMarker))
             {
-                //an ordinary value
+                // An ordinary value
                 yield return value;
             }
             else
             {
-                //might be flag or escape
-                //examine the next value
+                // Might be flag or escape
+                // Examine the next value
                 if (!enumerator.MoveNext())
                     throw new ArgumentException("The provided data is not properly encoded.");
                 if (enumerator.Current.Equals(rleMarker))
                 {
-                    //escaped value
+                    // Escaped value
                     yield return value;
                 }
                 else
                 {
-                    //rle marker
+                    // Rle marker
                     var length = enumerator.Current.ToInt64(CultureInfo.InvariantCulture);
                     if (!enumerator.MoveNext())
                         throw new ArgumentException("The provided data is not properly encoded.");
@@ -119,7 +104,7 @@ static class RLE<T> where T : struct, IConvertible
     {
         if ((length <= 3 && !value.Equals(rleMarker)) || length <= 1)
         {
-            //don't compress this run, it is just too small
+            // Don't compress this run, it is just too small
             for (ulong i = 0; i < length; ++i)
             {
                 if (value.Equals(rleMarker))
@@ -129,7 +114,7 @@ static class RLE<T> where T : struct, IConvertible
         }
         else
         {
-            //compressed run
+            // Compressed run
             yield return rleMarker;
             yield return (T)(dynamic)length;
             yield return value;
