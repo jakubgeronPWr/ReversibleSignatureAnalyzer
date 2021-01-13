@@ -1,4 +1,6 @@
-﻿using ReversibleSignatureAnalyzer.Model;
+﻿using ReversibleSignatureAnalyzer.Controller.Algorithm;
+using ReversibleSignatureAnalyzer.Controller.Algorithm.DifferenceExpansion;
+using ReversibleSignatureAnalyzer.Model;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -10,17 +12,38 @@ namespace ConfigurationDialogBox
 {
     public partial class DifferencesExpansionConfiguraitonDialogBox : Window
     {
-        public DifferencesExpansionConfiguraitonDialogBox(int iterationsNumber, int threshold, Direction embeddingDirection, HashSet<EmbeddingChanel> embeddingChanels)
+        public DifferencesExpansionConfiguraitonDialogBox(DifferencesExpansionConfiguration standardDEConfig,
+                                                          DifferenceExpansionBruteForceConfiguration bruteForceDEConfig,
+                                                          AlgorithmConfiguration currentConfiguration)
         {
             InitializeComponent();
-            this.iterationsNumber = iterationsNumber;
-            this.threshold = threshold;
-            tbIterations.Text = iterationsNumber.ToString();
-            tbThreshold.Text = threshold.ToString();
-            cbEmbeddingDirection.SelectedIndex = (int) embeddingDirection;
-            cbR.IsChecked = embeddingChanels.Contains(EmbeddingChanel.R);
-            cbG.IsChecked = embeddingChanels.Contains(EmbeddingChanel.G);
-            cbB.IsChecked = embeddingChanels.Contains(EmbeddingChanel.B);
+
+            if (standardDEConfig != null)
+            {
+                this.threshold = standardDEConfig.Threeshold;
+                tbThreshold.Text = threshold.ToString();
+                cbEmbeddingDirection.SelectedIndex = (int)standardDEConfig.EmbeddingDirection;
+                cbR.IsChecked = standardDEConfig.EmbeddingChanels.Contains(EmbeddingChanel.R);
+                cbG.IsChecked = standardDEConfig.EmbeddingChanels.Contains(EmbeddingChanel.G);
+                cbB.IsChecked = standardDEConfig.EmbeddingChanels.Contains(EmbeddingChanel.B);
+                ComboBoxItem standardComboBoxItem = new ComboBoxItem();
+                standardComboBoxItem.Content = "Standard";
+                standardComboBoxItem.IsSelected = currentConfiguration is DifferencesExpansionConfiguration;
+                cbConfigurationType.Items.Add(standardComboBoxItem);
+            }
+
+            if (bruteForceDEConfig != null)
+            {
+                cbHorizontal_BF.IsChecked = bruteForceDEConfig.EmbeddingDirections.Contains(Direction.Horizontal);
+                cbVertical_BF.IsChecked = bruteForceDEConfig.EmbeddingDirections.Contains(Direction.Vertical);
+                cbR_BF.IsChecked = bruteForceDEConfig.EmbeddingChanels.Contains(EmbeddingChanel.R);
+                cbG_BF.IsChecked = bruteForceDEConfig.EmbeddingChanels.Contains(EmbeddingChanel.G);
+                cbB_BF.IsChecked = bruteForceDEConfig.EmbeddingChanels.Contains(EmbeddingChanel.B);
+                ComboBoxItem bruteForceItem = new ComboBoxItem();
+                bruteForceItem.Content = "Brute force";
+                bruteForceItem.IsSelected = currentConfiguration is DifferenceExpansionBruteForceConfiguration;
+                cbConfigurationType.Items.Add(bruteForceItem);
+            }
         }
 
         public Thickness DocumentMargin
@@ -60,44 +83,6 @@ namespace ConfigurationDialogBox
             return LogicalTreeHelper.GetChildren(node).OfType<DependencyObject>().All(IsValid);
         }
 
-        private int iterationsNumber = 1;
-
-        public int IterationsNumber
-        {
-            get { return iterationsNumber; }
-            set
-            {
-                iterationsNumber = value;
-                tbIterations.Text = value.ToString();
-            }
-        }
-
-        private void cmdUp_Click(object sender, RoutedEventArgs e)
-        {
-            //IterationsNumber++;
-        }
-
-        private void cmdDown_Click(object sender, RoutedEventArgs e)
-        {
-            if (iterationsNumber > 1)
-            {
-                //IterationsNumber--;
-            }     
-        }
-
-        private void txtNum_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (tbIterations == null)
-            {
-                return;
-            }
-            if (!int.TryParse(tbIterations.Text, out iterationsNumber))
-            {
-                iterationsNumber = 1;
-                tbIterations.Text = iterationsNumber.ToString();
-            }
-        }
-
         private int threshold = 1;
 
         public int Threshold
@@ -110,19 +95,6 @@ namespace ConfigurationDialogBox
             }
         }
 
-        private void thresholdUp_Click(object sender, RoutedEventArgs e)
-        {
-            Threshold++;
-        }
-
-        private void thresholdDown_Click(object sender, RoutedEventArgs e)
-        {
-            if (Threshold > 1)
-            {
-                Threshold--;
-            }
-        }
-
         private void txtThreshold_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (tbThreshold == null)
@@ -131,9 +103,36 @@ namespace ConfigurationDialogBox
             }
             if (!int.TryParse(tbThreshold.Text, out threshold))
             {
-                iterationsNumber = 1;
                 tbThreshold.Text = threshold.ToString();
             }
+        }
+
+        private void cbConfigurationType_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (cbConfigurationType.SelectedItem != null)
+            {
+                string selection = (e.AddedItems[0] as ComboBoxItem).Content as string;
+                if (selection == "Standard")
+                {
+                    GdStandardConfiguration.Visibility = Visibility.Visible;
+                    GdBruteForceConfiguration.Visibility = Visibility.Collapsed;
+                }
+                if (selection == "Brute force")
+                {
+                    GdBruteForceConfiguration.Visibility = Visibility.Visible;
+                    GdStandardConfiguration.Visibility = Visibility.Collapsed;
+                }
+                
+            }
+        }
+
+        private void okButton_BF_Click(object sender, RoutedEventArgs e)
+        {
+            if (!IsValid(this))
+            {
+                return;
+            }
+            DialogResult = true;
         }
     }
 }

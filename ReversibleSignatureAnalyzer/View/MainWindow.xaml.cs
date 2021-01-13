@@ -15,6 +15,8 @@ using ReversibleSignatureAnalyzer.Controller.Algorithm.DifferenceExpansion;
 using ReversibleSignatureAnalyzer.Controller.Algorithm;
 using System.Collections.Generic;
 using ReversibleSignatureAnalyzer.Controller.Algorithm.HistogramShifting;
+using ReversibleSignatureAnalyzer.Controller.Algorithm.GlobalDecoding;
+using ConfigurationDialogBox;
 
 namespace ReversibleSignatureAnalyzer.View
 {
@@ -32,25 +34,26 @@ namespace ReversibleSignatureAnalyzer.View
         private bool isFileLoaded = true;
         private BitmapImage importedImage;
         private BitmapImage resultImage;
+        private AlgorithmConfiguration activeEncodingDEConfig;
+        private AlgorithmConfiguration activeDecodingDEConfig;
+        private AlgorithmConfiguration standardEncodingDEConfig = new DifferencesExpansionConfiguration(20, Direction.Horizontal, new HashSet<EmbeddingChanel>(){ EmbeddingChanel.R });
+        private AlgorithmConfiguration standardDecodingDEConfig = new DifferencesExpansionConfiguration(20, Direction.Horizontal, new HashSet<EmbeddingChanel>() { EmbeddingChanel.R });
+        private AlgorithmConfiguration bruteForceDecodingDEConfig = new DifferenceExpansionBruteForceConfiguration(new HashSet<EmbeddingChanel>() { EmbeddingChanel.R }, new HashSet<Direction>() { Direction.Horizontal, Direction.Vertical });
+        private AlgorithmConfiguration currentEncodingHsConfiguration = new HistogramShiftingConfiguration(false, new HashSet<EmbeddingChanel>() { EmbeddingChanel.R });
+        private AlgorithmConfiguration currentDecodingHsConfiguration = new HistogramShiftingConfiguration(true, new HashSet<EmbeddingChanel>() { EmbeddingChanel.R });
         private string activityType;
         private AlgorithmConfiguration currentDeConfiguration = new DifferencesExpansionConfiguration(1, 20, Direction.Horizontal, new HashSet<EmbeddingChanel>(){ EmbeddingChanel.R });
         private AlgorithmConfiguration currentDwtSvdConfiguration = new DwtSvdConfiguration(1,  new HashSet<EmbeddingChanel>(){ EmbeddingChanel.R }, new HashSet<DwtDctSvdAlgorithm.QuarterSymbol>() { DwtDctSvdAlgorithm.QuarterSymbol.HH });
         private IReversibleWatermarkingAlgorithm deAlgorithm = new DifferencesExpansionAlgorithm();
         private IReversibleWatermarkingAlgorithm dwtDctSvdAlgotithm = new DwtDctSvdAlgorithm();
         private IReversibleWatermarkingAlgorithm hsAlgorithm = new HistogramShiftingAlgorithm();
+        private IReversibleWatermarkingAlgorithm globalAlgorithm = new GlobalDecodingAlgorithm();
 
 
         public MainWindow()
         {
             InitializeComponent();
-            HideStartUp();
             SetStartup();
-        }
-
-        private void HideStartUp()
-        {
-            BtnExportFile.Visibility = Visibility.Collapsed;
-            TvExportFileName.Visibility = Visibility.Collapsed;
         }
 
         private void SetStartup()
@@ -58,26 +61,23 @@ namespace ReversibleSignatureAnalyzer.View
             RbAlgorithm1.IsChecked = true;
             CbActivityType.SelectedIndex = 0;
             addSignatureController = new AddSignatureController();
-            RbAlgorithm1.IsChecked = true;
             ImportImage(projectDirectory + "/Model/_img/lena.png");
-            activityType = CbActivityType.Text;
+            activeEncodingDEConfig = standardEncodingDEConfig;
+            activeDecodingDEConfig = standardDecodingDEConfig;
         }
 
         private void BtnImportFile_Click(object sender, RoutedEventArgs e)
         {
             Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
             dlg.DefaultExt = ".png";
-            dlg.Filter =
-                "PNG Filses (*.png)|*.png|JPG Files (*.jpg)|*.jpg|GIF Files (*.gif)|*.gif|JPEG Files (*.jpeg)|*.jpeg";
+            dlg.Filter = "PNG Filses (*.png)|*.png|JPG Files (*.jpg)|*.jpg|GIF Files (*.gif)|*.gif|JPEG Files (*.jpeg)|*.jpeg";
             Nullable<bool> result = dlg.ShowDialog();
-
             if (result.HasValue && result.Value)
             {
                 isFileLoaded = true;
                 string fileName = dlg.FileName;
                 ImportImage(fileName);
             }
-
         }
 
         private void ImportImage(string fileName)
@@ -86,7 +86,7 @@ namespace ReversibleSignatureAnalyzer.View
             importedImage = new BitmapImage(new Uri(fileName));
             ImgImport.Source = importedImage;
             ImgExport.Source = null;
-            SetTextRichTextBox(TvPayload, "Place for payload");
+            SetTextRichTextBox(TvPayload, "Type in your payload");
             TvExportFileName.Text = "";
         }
 
@@ -94,17 +94,18 @@ namespace ReversibleSignatureAnalyzer.View
         {
             var secretPayload = GetTextFromRichTextBox(TvPayload);
             IReversibleWatermarkingAlgorithm selectedAlgorithm = GetSelectedAlgorithm();
-            AlgorithmConfiguration configuration = GetConfigurationForSelectedAlgorithm();
-            if (isFileLoaded && CbActivityType.Text == TbAdd.Content.ToString())
+
+            if (isFileLoaded && isWatermarkingModeSelected())
             {
-                resultImage = addSignatureController.GetWatermarkedImage(importedImage, secretPayload, selectedAlgorithm, configuration);
+                resultImage = addSignatureController.GetWatermarkedImage(importedImage, secretPayload, selectedAlgorithm, GetEncodingConfigurationForSelectedAlgorithm());
             }
 
-            if (isFileLoaded && CbActivityType.Text == TbAnalyze.Content.ToString())
+            if (isFileLoaded && isAnalyzingModeSelected())
             {
-                Tuple<BitmapImage, string> imageAndPayload = addSignatureController.GetDecodedImage(importedImage, selectedAlgorithm, configuration);
+                Tuple<BitmapImage, string> imageAndPayload = addSignatureController.GetDecodedImage(importedImage, selectedAlgorithm, GetDecodingConfigurationForSelectedAlgorithm());
                 resultImage = imageAndPayload.Item1;
                 SetTextRichTextBox(TvPayload, imageAndPayload.Item2);
+                TvPayload.Visibility = Visibility.Visible;
             }
 
             ImgExport.Source = resultImage;
@@ -113,12 +114,21 @@ namespace ReversibleSignatureAnalyzer.View
             TvExportFileName.Visibility = Visibility.Visible;
         }
 
+        
+
+        private bool isWatermarkingModeSelected()
+        {
+            return CbActivityType.Text == TbAdd.Content.ToString();
+        }
+
+        private bool isAnalyzingModeSelected()
+        {
+            return CbActivityType.Text == TbAnalyze.Content.ToString();
+        }
+
         private string GetTextFromRichTextBox(RichTextBox rtb)
         {
-            TextRange tr = new TextRange(
-                rtb.Document.ContentStart,
-                rtb.Document.ContentEnd
-                );
+            TextRange tr = new TextRange(rtb.Document.ContentStart,rtb.Document.ContentEnd);
             return tr.Text;
         }
 
@@ -142,14 +152,18 @@ namespace ReversibleSignatureAnalyzer.View
             {
                 return hsAlgorithm;
             }
+            else if (RbAlgorithm4.IsChecked.Value)
+            {
+                return globalAlgorithm;
+            }
             throw new Exception("No algorithm selected");
         }
 
-        private AlgorithmConfiguration GetConfigurationForSelectedAlgorithm()
+        private AlgorithmConfiguration GetEncodingConfigurationForSelectedAlgorithm()
         {
             if (RbAlgorithm1.IsChecked.Value)
             {
-                return currentDeConfiguration;
+                return activeEncodingDEConfig;
             }
             else if (RbAlgorithm2.IsChecked.Value)
             {
@@ -157,7 +171,28 @@ namespace ReversibleSignatureAnalyzer.View
             }
             else if (RbAlgorithm3.IsChecked.Value)
             {
-                return currentDeConfiguration;
+                return currentEncodingHsConfiguration;
+            }
+            throw new Exception("No algorithm selected");
+        }
+
+        private AlgorithmConfiguration GetDecodingConfigurationForSelectedAlgorithm()
+        {
+            if (RbAlgorithm1.IsChecked.Value)
+            {
+                return activeDecodingDEConfig;
+            }
+            else if (RbAlgorithm2.IsChecked.Value)
+            {
+                return null;
+            }
+            else if (RbAlgorithm3.IsChecked.Value)
+            {
+                return currentDecodingHsConfiguration;
+            }
+            else if (RbAlgorithm4.IsChecked.Value)
+            {
+                return null;
             }
             throw new Exception("No algorithm selected");
         }
@@ -192,12 +227,14 @@ namespace ReversibleSignatureAnalyzer.View
 
         private void OperationSuccessNotify(string msg)
         {
+            TvOperationResult.Visibility = Visibility.Visible;
             TvOperationResult.Text = $"{SUCCESS} {msg}";
             TvOperationResult.Foreground = Brushes.ForestGreen;
         }
 
         private void OperationErrorNotify(string msg)
         {
+            TvOperationResult.Visibility = Visibility.Visible;
             TvOperationResult.Text = msg;
             TvOperationResult.Foreground = Brushes.Red;
         }
@@ -222,17 +259,47 @@ namespace ReversibleSignatureAnalyzer.View
 
         private void BtnConfigDE_Click(object sender, RoutedEventArgs e)
         {
-            DifferencesExpansionConfiguration config = (DifferencesExpansionConfiguration) currentDeConfiguration;
-            var dialogBox = new ConfigurationDialogBox.DifferencesExpansionConfiguraitonDialogBox(
-                config.Iterations,
-                config.Threeshold,
-                config.EmbeddingDirection,
-                config.EmbeddingChanels)
+            if (isWatermarkingModeSelected())
             {
-                Owner = this,
-            };
-            dialogBox.ShowDialog();
-            if (dialogBox.DialogResult == true)
+                DifferencesExpansionConfiguration config = (DifferencesExpansionConfiguration) standardEncodingDEConfig;
+                var dialogBox = new ConfigurationDialogBox.DifferencesExpansionConfiguraitonDialogBox(config, null, activeEncodingDEConfig)
+                {
+                    Owner = this,
+                };
+                dialogBox.ShowDialog();
+                AlgorithmConfiguration newConfig = GetConfigurationBasedOnDialogBoxResult(dialogBox);
+                if (newConfig != null)
+                {
+                    standardEncodingDEConfig = newConfig;
+                    activeEncodingDEConfig = standardEncodingDEConfig;
+                }
+            }
+            if(isAnalyzingModeSelected())
+            {
+                DifferencesExpansionConfiguration deConfig = (DifferencesExpansionConfiguration)standardDecodingDEConfig;
+                DifferenceExpansionBruteForceConfiguration deBruteForceConfig = (DifferenceExpansionBruteForceConfiguration)bruteForceDecodingDEConfig;
+                var dialogBox = new ConfigurationDialogBox.DifferencesExpansionConfiguraitonDialogBox(deConfig, deBruteForceConfig, activeDecodingDEConfig)
+                {
+                    Owner = this,
+                };
+                dialogBox.ShowDialog();
+                AlgorithmConfiguration newConfig = GetConfigurationBasedOnDialogBoxResult(dialogBox);
+                if (dialogBox.cbConfigurationType.Text == "Standard" && newConfig != null)
+                {
+                    standardDecodingDEConfig = newConfig;
+                    activeDecodingDEConfig = standardDecodingDEConfig;
+                }
+                else if(dialogBox.cbConfigurationType.Text == "Brute force" && newConfig != null)
+                {
+                    bruteForceDecodingDEConfig = newConfig;
+                    activeDecodingDEConfig = bruteForceDecodingDEConfig;
+                }
+            }
+        }
+
+        private AlgorithmConfiguration GetConfigurationBasedOnDialogBoxResult(DifferencesExpansionConfiguraitonDialogBox dialogBox)
+        {
+            if (dialogBox.DialogResult == true && dialogBox.cbConfigurationType.Text == "Standard")
             {
                 Direction direction;
                 Enum.TryParse(dialogBox.cbEmbeddingDirection.Text, out direction);
@@ -249,8 +316,35 @@ namespace ReversibleSignatureAnalyzer.View
                 {
                     embeddingChanels.Add(EmbeddingChanel.B);
                 }
-                currentDeConfiguration = new DifferencesExpansionConfiguration(dialogBox.IterationsNumber, dialogBox.Threshold, direction, embeddingChanels);
+                return new DifferencesExpansionConfiguration(dialogBox.Threshold, direction, embeddingChanels);
             }
+            if (dialogBox.DialogResult == true && dialogBox.cbConfigurationType.Text == "Brute force")
+            {
+                HashSet<Direction> directions = new HashSet<Direction>();
+                if (dialogBox.cbHorizontal_BF.IsChecked == true)
+                {
+                    directions.Add(Direction.Horizontal);
+                }
+                if (dialogBox.cbVertical_BF.IsChecked == true)
+                {
+                    directions.Add(Direction.Vertical);
+                }
+                HashSet<EmbeddingChanel> embeddingChanels = new HashSet<EmbeddingChanel>();
+                if (dialogBox.cbR_BF.IsChecked == true)
+                {
+                    embeddingChanels.Add(EmbeddingChanel.R);
+                }
+                if (dialogBox.cbG_BF.IsChecked == true)
+                {
+                    embeddingChanels.Add(EmbeddingChanel.G);
+                }
+                if (dialogBox.cbB_BF.IsChecked == true)
+                {
+                    embeddingChanels.Add(EmbeddingChanel.B);
+                }
+                return new DifferenceExpansionBruteForceConfiguration(embeddingChanels, directions);
+            }
+            return null;
         }
 
         private void BtnConfigSVD_Click(object sender, RoutedEventArgs e)
@@ -309,36 +403,100 @@ namespace ReversibleSignatureAnalyzer.View
 
         private void BtnConfigHS_Click(object sender, RoutedEventArgs e)
         {
-            HashSet<EmbeddingChanel> set = new HashSet<EmbeddingChanel>();
-            set.Add(EmbeddingChanel.R);
-            HistogramShiftingConfiguration config = new HistogramShiftingConfiguration(1, set);
-            var dialogBox = new ConfigurationDialogBox.HistogramShiftingConfiguraitonDialogBox(
-                config.EmbeddingChanels)
+            if(isWatermarkingModeSelected())
             {
-                Owner = this,
-            };
-            dialogBox.ShowDialog();
-            if (dialogBox.DialogResult == true)
-            {
-                if (dialogBox.cbR.IsChecked == true)
+                HashSet<EmbeddingChanel> set = new HashSet<EmbeddingChanel>();
+                set.Add(EmbeddingChanel.R);
+                HistogramShiftingConfiguration config = new HistogramShiftingConfiguration(false, set);
+                var dialogBox = new ConfigurationDialogBox.HistogramShiftingConfiguraitonDialogBox(
+                    config.EmbeddingChanels)
                 {
-                    HashSet<EmbeddingChanel> embeddingChanels = new HashSet<EmbeddingChanel>();
+                    Owner = this,
+                };
+                dialogBox.ShowDialog();
+                if (dialogBox.DialogResult == true)
+                {
                     if (dialogBox.cbR.IsChecked == true)
                     {
-                        embeddingChanels.Add(EmbeddingChanel.R);
+                        HashSet<EmbeddingChanel> embeddingChanels = new HashSet<EmbeddingChanel>();
+                        if (dialogBox.cbR.IsChecked == true)
+                        {
+                            embeddingChanels.Add(EmbeddingChanel.R);
+                        }
+                        if (dialogBox.cbG.IsChecked == true)
+                        {
+                            embeddingChanels.Add(EmbeddingChanel.G);
+                        }
+                        if (dialogBox.cbB.IsChecked == true)
+                        {
+                            embeddingChanels.Add(EmbeddingChanel.B);
+                        }
+                        currentEncodingHsConfiguration = new HistogramShiftingConfiguration(false, embeddingChanels);
                     }
-                    if (dialogBox.cbG.IsChecked == true)
+                }
+            }
+            if(isAnalyzingModeSelected())
+            {
+                HashSet<EmbeddingChanel> set = new HashSet<EmbeddingChanel>();
+                set.Add(EmbeddingChanel.R);
+                HistogramShiftingConfiguration config = new HistogramShiftingConfiguration(false, set);
+                var dialogBox = new ConfigurationDialogBox.HistogramShiftingConfiguraitonDecodingDialogBox(
+                    config.EmbeddingChanels)
+                {
+                    Owner = this,
+                };
+                dialogBox.ShowDialog();
+                if (dialogBox.DialogResult == true)
+                {
+                    if (dialogBox.cbR.IsChecked == true)
                     {
-                        embeddingChanels.Add(EmbeddingChanel.G);
+                        HashSet<EmbeddingChanel> embeddingChanels = new HashSet<EmbeddingChanel>();
+                        if (dialogBox.cbR.IsChecked == true)
+                        {
+                            embeddingChanels.Add(EmbeddingChanel.R);
+                        }
+                        if (dialogBox.cbG.IsChecked == true)
+                        {
+                            embeddingChanels.Add(EmbeddingChanel.G);
+                        }
+                        if (dialogBox.cbB.IsChecked == true)
+                        {
+                            embeddingChanels.Add(EmbeddingChanel.B);
+                        }
+                        currentDecodingHsConfiguration = new HistogramShiftingConfiguration(dialogBox.cbBruteforce.IsChecked == true, embeddingChanels);
                     }
-                    if (dialogBox.cbB.IsChecked == true)
-                    {
-                        embeddingChanels.Add(EmbeddingChanel.B);
-                    }
-                    currentDeConfiguration = new HistogramShiftingConfiguration(1, embeddingChanels);
                 }
             }
         }
 
+        private void TvPayload_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
+        }
+
+
+        private void CbActivityType_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (CbActivityType.SelectedItem != null)
+            {
+                string selection = (e.AddedItems[0] as ComboBoxItem).Content as string;
+                if (selection == TbAdd.Content.ToString())
+                {
+                    SetTextRichTextBox(TvPayload, "Type in your payload");
+                    TvPayload.Visibility = Visibility.Visible;
+                    RbAlgorithm4.Visibility = Visibility.Collapsed;
+                }
+                if (selection == TbAnalyze.Content.ToString())
+                {
+                    SetTextRichTextBox(TvPayload, "");
+                    TvPayload.Visibility = Visibility.Collapsed;
+                    RbAlgorithm4.Visibility = Visibility.Visible;
+                }
+                TvOperationResult.Visibility = Visibility.Collapsed;
+                BtnExportFile.Visibility = Visibility.Collapsed;
+                TvExportFileName.Visibility = Visibility.Collapsed;
+                TvExportFileName.Text = "";
+            }
+        }
     }
 }

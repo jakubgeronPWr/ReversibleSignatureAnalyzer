@@ -7,41 +7,13 @@
     Height="230"
     Width="300"
     MinHeight="10"
-    MinWidth="300"
+    MinWidth="315"
     ResizeMode="CanResizeWithGrip"
     ShowInTaskbar="False"
     WindowStartupLocation="CenterOwner" 
     FocusManager.FocusedElement="{Binding ElementName=leftMarginTextBox}">
-
     <Grid>
-
-        <Grid.Resources>
-            <Style TargetType="{x:Type Grid}">
-                <Setter Property="Margin" Value="10" />
-            </Style>
-            <Style TargetType="{x:Type Label}">
-                <Setter Property="Margin" Value="0,3,5,5" />
-                <Setter Property="Padding" Value="0,0,0,5" />
-            </Style>
-            <Style TargetType="{x:Type TextBox}">
-                <Setter Property="Margin" Value="0,0,0,10" />
-            </Style>
-            <Style TargetType="{x:Type ComboBox}">
-                <Setter Property="Margin" Value="0,0,0,10" />
-            </Style>
-            <Style TargetType="{x:Type StackPanel}">
-                <Setter Property="Orientation" Value="Horizontal" />
-                <Setter Property="HorizontalAlignment" Value="Right" />
-            </Style>
-            <Style TargetType="{x:Type Button}">
-                <Setter Property="Width" Value="70" />
-                <Setter Property="Height" Value="25" />
-                <Setter Property="Margin" Value="5,0,0,0" />
-            </Style>
-        </Grid.Resources>
-
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
 
@@ -49,43 +21,174 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition />
         </Grid.RowDefinitions>
+        <Grid Grid.Row="0" Grid.Column="1">
 
-        <Label Grid.Column="0" Grid.Row="0">Number of iterations:</Label>
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,0" Height="Auto" Width="Auto" Grid.Column="1" Grid.Row="0">
-            <TextBox x:Name="tbIterations" Height="Auto" MinWidth="107" Width="Auto" VerticalAlignment="Center" x:FieldModifier="private" Margin="0,0,0,10" Text="1" TextChanged="txtNum_TextChanged" />
-            <Button x:Name="cmdUp" Height="Auto" VerticalAlignment="Center" x:FieldModifier="private" Margin="0,0,0,10" Content="˄" MinWidth="20" Width="Auto" Click="cmdUp_Click" />
-            <Button x:Name="cmdDown" Height="Auto" VerticalAlignment="Center" x:FieldModifier="private" Margin="0,0,0,10"  Content="˅" MinWidth="20" Width="Auto" Click="cmdDown_Click" />
-        </StackPanel>
+            <Grid.Resources>
+                <Style TargetType="{x:Type Grid}">
+                    <Setter Property="Margin" Value="10" />
+                </Style>
+                <Style TargetType="{x:Type Label}">
+                    <Setter Property="Margin" Value="0,3,5,5" />
+                    <Setter Property="Padding" Value="0,0,0,5" />
+                </Style>
+                <Style TargetType="{x:Type TextBox}">
+                    <Setter Property="Margin" Value="0,0,0,10" />
+                </Style>
+                <Style TargetType="{x:Type ComboBox}">
+                    <Setter Property="Margin" Value="0,0,0,10" />
+                </Style>
+                <Style TargetType="{x:Type StackPanel}">
+                    <Setter Property="Orientation" Value="Horizontal" />
+                    <Setter Property="HorizontalAlignment" Value="Right" />
+                </Style>
+                <Style TargetType="{x:Type Button}">
+                    <Setter Property="Width" Value="70" />
+                    <Setter Property="Height" Value="25" />
+                    <Setter Property="Margin" Value="5,0,0,0" />
+                </Style>
+            </Grid.Resources>
 
-        <Label Grid.Column="0" Grid.Row="1">Treeshold:</Label>
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,0" Height="Auto" Width="Auto" Grid.Column="1" Grid.Row="1">
-            <TextBox x:Name="tbThreshold" Height="Auto" MinWidth="107" Width="Auto" VerticalAlignment="Center" x:FieldModifier="private" Margin="0,0,0,10" Text="20" TextChanged="txtThreshold_TextChanged" />
-            <Button x:Name="thresholdUp" Height="Auto" VerticalAlignment="Center" x:FieldModifier="private" Margin="0,0,0,10" Content="˄" MinWidth="20" Width="Auto" Click="thresholdUp_Click" />
-            <Button x:Name="thresholdDown" Height="Auto" VerticalAlignment="Center" x:FieldModifier="private" Margin="0,0,0,10"  Content="˅" MinWidth="20" Width="Auto" Click="thresholdDown_Click" />
-        </StackPanel>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" MinWidth="120"/>
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
 
-        <Label Grid.Column="0" Grid.Row="2">Embedding direction:</Label>
-        <ComboBox Name="cbEmbeddingDirection" Grid.Column="1" Grid.Row="2">
-            <ComboBoxItem IsSelected="True">Horizontal</ComboBoxItem>
-            <ComboBoxItem>Vertical</ComboBoxItem>
-        </ComboBox>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-        <Label Grid.Column="0" Grid.Row="3">Embedding channels:</Label>
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,0" Height="Auto" Width="Auto" Grid.Column="1" Grid.Row="3">
-            <CheckBox Name="cbR" IsChecked="True" Margin="0,2,0,0">R</CheckBox>
-            <CheckBox Name="cbG" Margin="20,2,0,10">G</CheckBox>
-            <CheckBox Name="cbB" Margin="20,2,0,10">B</CheckBox>
-        </StackPanel>
+            <Label Grid.Column="0" Grid.Row="1">Configuration  type:</Label>
+            <ComboBox Name="cbConfigurationType" Grid.Column="1" Grid.Row="1" Margin="0,3,0,5" SelectionChanged="cbConfigurationType_SelectionChanged">
+            </ComboBox>
 
-        <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="5">
-            <Button Name="okButton" Click="okButton_Click" IsDefault="True">OK</Button>
-            <Button Name="cancelButton" IsCancel="True">Cancel</Button>
-        </StackPanel>
+        </Grid >
 
-    </Grid >
+        <Grid Grid.Row="1" Grid.Column="1" Name="GdStandardConfiguration" Visibility="Visible">
 
+            <Grid.Resources>
+                <Style TargetType="{x:Type Grid}">
+                    <Setter Property="Margin" Value="10" />
+                </Style>
+                <Style TargetType="{x:Type Label}">
+                    <Setter Property="Margin" Value="0,3,5,5" />
+                    <Setter Property="Padding" Value="0,0,0,5" />
+                </Style>
+                <Style TargetType="{x:Type TextBox}">
+                    <Setter Property="Margin" Value="0,0,0,10" />
+                </Style>
+                <Style TargetType="{x:Type ComboBox}">
+                    <Setter Property="Margin" Value="0,0,0,10" />
+                </Style>
+                <Style TargetType="{x:Type StackPanel}">
+                    <Setter Property="Orientation" Value="Horizontal" />
+                    <Setter Property="HorizontalAlignment" Value="Right" />
+                </Style>
+                <Style TargetType="{x:Type Button}">
+                    <Setter Property="Width" Value="70" />
+                    <Setter Property="Height" Value="25" />
+                    <Setter Property="Margin" Value="5,0,0,0" />
+                </Style>
+            </Grid.Resources>
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" MinWidth="120"/>
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+
+            <Label Grid.Column="0" Grid.Row="2">Treeshold:</Label>
+            <DockPanel Margin="0,3,0,5" Height="Auto" Width="Auto" Grid.Column="1" Grid.Row="2" HorizontalAlignment="Stretch">
+                <TextBox x:Name="tbThreshold" Height="Auto" MinWidth="107" VerticalAlignment="Stretch" x:FieldModifier="private" Margin="0,0,0,0" Text="20" TextChanged="txtThreshold_TextChanged" HorizontalAlignment="Stretch" />
+            </DockPanel>
+
+            <Label Grid.Column="0" Grid.Row="3">Embedding direction:</Label>
+            <ComboBox Name="cbEmbeddingDirection" Grid.Column="1" Grid.Row="3" Margin="0,3,0,5">
+                <ComboBoxItem IsSelected="True">Horizontal</ComboBoxItem>
+                <ComboBoxItem>Vertical</ComboBoxItem>
+            </ComboBox>
+
+            <Label Grid.Column="0" Grid.Row="4">Embedding channels:</Label>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Height="Auto" Grid.Column="1" Grid.Row="4" Margin="0,3,5,5">
+                <CheckBox Name="cbR" IsChecked="True" Margin="0,2,0,0">R</CheckBox>
+                <CheckBox Name="cbG" Margin="20,2,0,10">G</CheckBox>
+                <CheckBox Name="cbB" Margin="20,2,0,10">B</CheckBox>
+            </StackPanel>
+
+            <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="6">
+                <Button Name="okButton" Click="okButton_Click" IsDefault="True">OK</Button>
+                <Button Name="cancelButton" IsCancel="True">Cancel</Button>
+            </StackPanel>
+
+        </Grid >
+
+        <Grid Grid.Row="1" Grid.Column="1" Name="GdBruteForceConfiguration" Visibility="Collapsed">
+
+            <Grid.Resources>
+                <Style TargetType="{x:Type Grid}">
+                    <Setter Property="Margin" Value="10" />
+                </Style>
+                <Style TargetType="{x:Type Label}">
+                    <Setter Property="Margin" Value="0,3,5,5" />
+                    <Setter Property="Padding" Value="0,0,0,5" />
+                </Style>
+                <Style TargetType="{x:Type TextBox}">
+                    <Setter Property="Margin" Value="0,0,0,10" />
+                </Style>
+                <Style TargetType="{x:Type ComboBox}">
+                    <Setter Property="Margin" Value="0,0,0,10" />
+                </Style>
+                <Style TargetType="{x:Type StackPanel}">
+                    <Setter Property="Orientation" Value="Horizontal" />
+                    <Setter Property="HorizontalAlignment" Value="Right" />
+                </Style>
+                <Style TargetType="{x:Type Button}">
+                    <Setter Property="Width" Value="70" />
+                    <Setter Property="Height" Value="25" />
+                    <Setter Property="Margin" Value="5,0,0,0" />
+                </Style>
+            </Grid.Resources>
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" MinWidth="120"/>
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+
+            <Label Grid.Column="0" Grid.Row="2">Embedding direction:</Label>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Height="Auto" Grid.Column="1" Grid.Row="2" Margin="0,3,5,5">
+                <CheckBox Name="cbHorizontal_BF" IsChecked="True" Margin="0,2,0,0">Horizontal</CheckBox>
+                <CheckBox Name="cbVertical_BF" Margin="20,2,0,10">Vertical</CheckBox>
+            </StackPanel>
+
+            <Label Grid.Column="0" Grid.Row="3">Embedding channels:</Label>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Height="Auto" Grid.Column="1" Grid.Row="3" Margin="0,3,5,5">
+                <CheckBox Name="cbR_BF" IsChecked="True" Margin="0,2,0,0">R</CheckBox>
+                <CheckBox Name="cbG_BF" Margin="20,2,0,10">G</CheckBox>
+                <CheckBox Name="cbB_BF" Margin="20,2,0,10">B</CheckBox>
+            </StackPanel>
+
+            <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="6">
+                <Button Name="okButton_BF" Click="okButton_BF_Click" IsDefault="True">OK</Button>
+                <Button Name="cancelButton_BF" IsCancel="True">Cancel</Button>
+            </StackPanel>
+
+        </Grid >
+    </Grid>
 </Window>

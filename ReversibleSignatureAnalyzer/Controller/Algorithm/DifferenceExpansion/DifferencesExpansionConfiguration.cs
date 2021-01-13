@@ -5,12 +5,12 @@ using System.Text;
 
 namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DifferenceExpansion
 {
-    class DifferencesExpansionConfiguration : AlgorithmConfiguration
+    public class DifferencesExpansionConfiguration : AlgorithmConfiguration
     {
         public int Threeshold { get; set; }
         public Direction EmbeddingDirection { get; set; }
 
-        public DifferencesExpansionConfiguration(int iterations, int threeshold, Direction embeddingDirection, HashSet<EmbeddingChanel> embeddingChanels) : base(iterations, embeddingChanels)
+        public DifferencesExpansionConfiguration(int threeshold, Direction embeddingDirection, HashSet<EmbeddingChanel> embeddingChanels) : base(embeddingChanels)
         {
             this.EmbeddingDirection = embeddingDirection;
             this.Threeshold = threeshold;        

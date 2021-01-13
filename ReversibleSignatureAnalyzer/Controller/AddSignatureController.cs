@@ -48,7 +48,7 @@ namespace ReversibleSignatureAnalyzer.Controller
         {
             Bitmap encodedImage = BitmapImageToBitmap(bitmapImage);
             Tuple<Bitmap, string> decodingResult = algorithm.Decode(encodedImage, configuration);
-            return new Tuple<BitmapImage, string>(BitmapToBitmapImage(decodingResult.Item1), decodingResult.Item2);
+            return decodingResult != null ? new Tuple<BitmapImage, string>(BitmapToBitmapImage(decodingResult.Item1), decodingResult.Item2) : null;
         }
 
     }

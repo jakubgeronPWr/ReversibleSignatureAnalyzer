@@ -5,9 +5,10 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.HistogramShifting
 {
     class HistogramShiftingConfiguration : AlgorithmConfiguration
     {
-        public HistogramShiftingConfiguration(int iterations, HashSet<EmbeddingChanel> embeddingChanels) : base(iterations, embeddingChanels) 
+        public bool bruteforce;
+        public HistogramShiftingConfiguration(bool brute, HashSet<EmbeddingChanel> embeddingChanels) : base(embeddingChanels) 
         {
-
+            bruteforce = brute;
         }
     }
 }
