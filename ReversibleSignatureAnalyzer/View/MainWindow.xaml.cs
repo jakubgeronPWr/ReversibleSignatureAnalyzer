@@ -42,8 +42,7 @@ namespace ReversibleSignatureAnalyzer.View
         private AlgorithmConfiguration currentEncodingHsConfiguration = new HistogramShiftingConfiguration(false, new HashSet<EmbeddingChanel>() { EmbeddingChanel.R });
         private AlgorithmConfiguration currentDecodingHsConfiguration = new HistogramShiftingConfiguration(true, new HashSet<EmbeddingChanel>() { EmbeddingChanel.R });
         private string activityType;
-        private AlgorithmConfiguration currentDeConfiguration = new DifferencesExpansionConfiguration(1, 20, Direction.Horizontal, new HashSet<EmbeddingChanel>(){ EmbeddingChanel.R });
-        private AlgorithmConfiguration currentDwtSvdConfiguration = new DwtSvdConfiguration(1,  new HashSet<EmbeddingChanel>(){ EmbeddingChanel.R }, new HashSet<DwtDctSvdAlgorithm.QuarterSymbol>() { DwtDctSvdAlgorithm.QuarterSymbol.HH });
+        private AlgorithmConfiguration currentDwtSvdConfiguration = new DwtSvdConfiguration(new HashSet<EmbeddingChanel>(){ EmbeddingChanel.R }, new HashSet<DwtDctSvdAlgorithm.QuarterSymbol>() { DwtDctSvdAlgorithm.QuarterSymbol.HH });
         private IReversibleWatermarkingAlgorithm deAlgorithm = new DifferencesExpansionAlgorithm();
         private IReversibleWatermarkingAlgorithm dwtDctSvdAlgotithm = new DwtDctSvdAlgorithm();
         private IReversibleWatermarkingAlgorithm hsAlgorithm = new HistogramShiftingAlgorithm();
@@ -102,19 +101,31 @@ namespace ReversibleSignatureAnalyzer.View
 
             if (isFileLoaded && isAnalyzingModeSelected())
             {
-                Tuple<BitmapImage, string> imageAndPayload = addSignatureController.GetDecodedImage(importedImage, selectedAlgorithm, GetDecodingConfigurationForSelectedAlgorithm());
-                resultImage = imageAndPayload.Item1;
-                SetTextRichTextBox(TvPayload, imageAndPayload.Item2);
-                TvPayload.Visibility = Visibility.Visible;
+                try
+                {
+                    Tuple<BitmapImage, string> imageAndPayload = addSignatureController.GetDecodedImage(importedImage,
+                        selectedAlgorithm, GetDecodingConfigurationForSelectedAlgorithm());
+                    resultImage = imageAndPayload.Item1;
+                    SetTextRichTextBox(TvPayload, imageAndPayload.Item2);
+                    TvPayload.Visibility = Visibility.Visible;
+                    ImgExport.Source = resultImage;
+                    Console.WriteLine(resultImage.UriSource);
+                    BtnExportFile.Visibility = Visibility.Visible;
+                    TvExportFileName.Visibility = Visibility.Visible;
+                }
+                catch (NullReferenceException exception)
+                {
+                    ThrowErrorDialog("Image is not watermarked or was encoded with different configuration or/and algorithm");
+                }
             }
-
-            ImgExport.Source = resultImage;
-            Console.WriteLine(resultImage.UriSource);
-            BtnExportFile.Visibility = Visibility.Visible;
-            TvExportFileName.Visibility = Visibility.Visible;
         }
 
-        
+        private void ThrowErrorDialog(string msg)
+        {
+            MessageBoxButton button = MessageBoxButton.OK;
+            MessageBoxResult result = MessageBox.Show(msg, "Error", button);
+        }
+
 
         private bool isWatermarkingModeSelected()
         {
@@ -184,7 +195,7 @@ namespace ReversibleSignatureAnalyzer.View
             }
             else if (RbAlgorithm2.IsChecked.Value)
             {
-                return null;
+                return currentDwtSvdConfiguration;
             }
             else if (RbAlgorithm3.IsChecked.Value)
             {
@@ -387,7 +398,7 @@ namespace ReversibleSignatureAnalyzer.View
                 {
                     quarter.Add(DwtDctSvdAlgorithm.QuarterSymbol.LL);
                 }
-                currentDwtSvdConfiguration = new DwtSvdConfiguration(1, embeddingChanel, quarter);
+                currentDwtSvdConfiguration = new DwtSvdConfiguration(embeddingChanel, quarter);
 
                 if (dialogBox.isFileLoaded)
                 {

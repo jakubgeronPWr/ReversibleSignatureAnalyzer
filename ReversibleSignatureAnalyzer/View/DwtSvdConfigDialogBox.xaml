@@ -60,8 +60,6 @@
             <RadioButton Name="qLL" Margin="20,2,0,10" Content="LL" GroupName="quarters"/>
         </StackPanel>
 
-        <Button Grid.Row="2" Grid.ColumnSpan="2" x:Name="getOrigin" Click="getOrigin_Click" IsDefault="True" Content="Origin Values" Margin="0,0,0,5" Width="80" HorizontalAlignment="Stretch"/>
-
         <StackPanel Grid.ColumnSpan="2" Grid.Row="3" Margin="0,0,0,0" VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Right" Height="25">
             
             <Button x:Name="okButton" Click="okButton_Click" IsDefault="True" Content="OK"/>

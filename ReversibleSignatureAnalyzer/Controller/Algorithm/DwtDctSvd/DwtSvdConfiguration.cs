@@ -12,7 +12,7 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
 
         public HashSet<DwtDctSvdAlgorithm.QuarterSymbol> QuarterSymbol { get; set; }
 
-        public DwtSvdConfiguration(int iterations, HashSet<EmbeddingChanel> embeddingChannels, HashSet<DwtDctSvdAlgorithm.QuarterSymbol> quarterSymbol) : base(iterations, embeddingChannels)
+        public DwtSvdConfiguration(HashSet<EmbeddingChanel> embeddingChannels, HashSet<DwtDctSvdAlgorithm.QuarterSymbol> quarterSymbol) : base(embeddingChannels)
         {
             QuarterSymbol = quarterSymbol;
         }
