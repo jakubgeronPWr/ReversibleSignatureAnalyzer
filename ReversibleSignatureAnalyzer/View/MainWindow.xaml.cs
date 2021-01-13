@@ -169,12 +169,19 @@ namespace ReversibleSignatureAnalyzer.View
             if (CheckFileName(fileName))
             {
                 string filePath = $"{projectDirectory}/Model/_img/{fileName}.png";
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                try
                 {
-                    BitmapEncoder encoder = new PngBitmapEncoder();
-                    encoder.Frames.Add(BitmapFrame.Create(resultImage));
-                    encoder.Save(fileStream);
-                    OperationSuccessNotify("");
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        BitmapEncoder encoder = new PngBitmapEncoder();
+                        encoder.Frames.Add(BitmapFrame.Create(resultImage));
+                        encoder.Save(fileStream);
+                        OperationSuccessNotify("");
+                    }
+                }
+                catch (Exception exception)
+                {
+                    OperationErrorNotify(BAD_FILE_NAME);
                 }
             }
             else
@@ -287,7 +294,17 @@ namespace ReversibleSignatureAnalyzer.View
                     quarter.Add(DwtDctSvdAlgorithm.QuarterSymbol.LL);
                 }
                 currentDwtSvdConfiguration = new DwtSvdConfiguration(1, embeddingChanel, quarter);
+
+                if (dialogBox.isFileLoaded)
+                {
+                    ImportOriginValues(dialogBox.fileName);
+                }
             }
+        }
+
+        private void ImportOriginValues(string fileName)
+        {
+
         }
 
         private void BtnConfigHS_Click(object sender, RoutedEventArgs e)

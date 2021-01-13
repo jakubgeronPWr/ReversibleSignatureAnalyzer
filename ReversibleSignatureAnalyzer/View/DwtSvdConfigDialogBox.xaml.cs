@@ -19,6 +19,9 @@ namespace ReversibleSignatureAnalyzer.View
     /// </summary>
     public partial class DwtSvdConfigDialogBox : Window
     {
+        public bool isFileLoaded = false;
+        public string fileName = "";
+
         public DwtSvdConfigDialogBox(HashSet<EmbeddingChanel> embeddingChanmels, HashSet<DwtDctSvdAlgorithm.QuarterSymbol> quarter)
         {
             InitializeComponent();
@@ -45,7 +48,17 @@ namespace ReversibleSignatureAnalyzer.View
 
         private void getOrigin_Click(object sender, RoutedEventArgs e)
         {
+            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+            dlg.DefaultExt = ".txt";
+            dlg.Filter =
+                "Txt Filses (*.txt)|*.txt";
+            Nullable<bool> result = dlg.ShowDialog();
 
+            if (result.HasValue && result.Value)
+            {
+                isFileLoaded = true;
+                fileName = dlg.FileName;
+            }
         }
     }
 }

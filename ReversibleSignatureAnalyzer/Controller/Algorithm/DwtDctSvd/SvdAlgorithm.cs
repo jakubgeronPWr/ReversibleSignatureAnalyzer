@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Accord.IO;
@@ -12,6 +14,8 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
 {
     public class SvdAlgorithm
     {
+        private readonly string _projectDirectory = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName;
+
         private double[,] _inMemorySo;
         private double _alpha = 0.05;
 
@@ -42,6 +46,8 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
 
         public Tuple<double[][,], double[,]> ExtractPayloadSVD(double[][,] watermarkedMatrix, EmbeddingChanel channel)//double[][,] originalMatrix, string channel)
         {
+             var decodingVector = ImportDecodingVector();
+             _inMemorySo = ArrayPayloadToDiagonalArray(decodingVector, decodingVector.GetLength(0), decodingVector.GetLength(0));
             var newImage = watermarkedMatrix.DeepClone();
             Tuple<double[][,], double[,]> result = null;
 
@@ -255,6 +261,8 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
 
                 Debug.WriteLine($"S diagonal small watermarked array number {i}: ");
                 PrintMatrix(sSmall);
+
+                exportOriginValues(_inMemorySo);
 
             }
 
@@ -498,6 +506,17 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
             return new Tuple<double[,], double[,]>(originalSp, payload);
         }
 
+        private void exportOriginValues(double[,] originValues)
+        {
+            using (StreamWriter sr = new StreamWriter($"{_projectDirectory}/Model/_img/origins.txt"))
+            {
+                for (int i = 0; i < originValues.GetLength(0); i++)
+                {
+                    sr.WriteLine(originValues[i, i]);
+                }
+            }
+        }
+
         private void TestSvd()
         {
                 var m = new double[,]
@@ -582,6 +601,30 @@ namespace ReversibleSignatureAnalyzer.Controller.Algorithm.DwtDctSvd
                 }
             }
             return result2DArray;
+        }
+
+        private double[] ImportDecodingVector()
+        {
+            string pathToFile = $"{Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName}/Model/_img/origins.txt";
+            String input = File.ReadAllText(pathToFile);
+            List<double> values = new List<double>();
+
+            foreach (var element in input.Split("\n"))
+            {
+                try
+                {
+                    var res = double.Parse(element.Trim());
+                    values.Add(res);
+                    Debug.WriteLine($"Adding value: {res}");
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine($"Ommit vale: {element}");
+                }
+            }
+
+            return values.ToArray();
+
         }
 
     }
