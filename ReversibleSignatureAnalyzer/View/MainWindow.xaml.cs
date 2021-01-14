@@ -97,6 +97,10 @@ namespace ReversibleSignatureAnalyzer.View
             if (isFileLoaded && isWatermarkingModeSelected())
             {
                 resultImage = addSignatureController.GetWatermarkedImage(importedImage, secretPayload, selectedAlgorithm, GetEncodingConfigurationForSelectedAlgorithm());
+                ImgExport.Source = resultImage;
+                Console.WriteLine(resultImage.UriSource);
+                BtnExportFile.Visibility = Visibility.Visible;
+                TvExportFileName.Visibility = Visibility.Visible;
             }
 
             if (isFileLoaded && isAnalyzingModeSelected())
